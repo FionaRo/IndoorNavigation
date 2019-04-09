@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">IndoorNavigation</string>
+    <string name="title_wifi">Wi-Fi</string>
+    <string name="title_beacons">Beacons</string>
+    <string name="title_cellId">Cell-Id</string>
+    <string name="title_vlc">VLC</string>
+    <string-array name="indoor_navigation_methods">
+        <item>Wi-Fi</item>
+        <item>Cell-Id</item>
+        <item>Beacons</item>
+        <item>VLC</item>
+    </string-array>
+</resources>
