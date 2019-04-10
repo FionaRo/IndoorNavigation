@@ -28,6 +28,7 @@ class WiFiLocationManager(
     override fun getLocation(): Boolean {
         val currentMills = System.currentTimeMillis()
         if (currentMills - mills < 30 * 1000) return true
+        mills = System.currentTimeMillis()
 
         val intentFilter = IntentFilter()
         intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
@@ -79,7 +80,7 @@ class WiFiLocationManager(
     private fun onSuccessDetermineLocation(googleLocation: GoogleLocation) {
         val currentLocation = Location(
             latitude = googleLocation.location.lat,
-            longtitude = googleLocation.location.lng,
+            longitude = googleLocation.location.lng,
             accuracy = googleLocation.accuracy
         )
         locationReceiver(true, currentLocation)

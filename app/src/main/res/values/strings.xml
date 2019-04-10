@@ -4,6 +4,7 @@
     <string name="title_beacons">Beacons</string>
     <string name="title_cellId">Cell-Id</string>
     <string name="title_vlc">VLC</string>
+    <string name="google_maps_key">AIzaSyAAIXs5e6CnvBgWIVSFYSLW0tEWwieJZpg</string>
     <string-array name="indoor_navigation_methods">
         <item>Wi-Fi</item>
         <item>Cell-Id</item>

@@ -107,7 +107,7 @@ class CellLocationManager(
     private fun onSuccessDetermineLocation(googleLocation: GoogleLocation) {
         val currentLocation = Location(
             latitude = googleLocation.location.lat,
-            longtitude = googleLocation.location.lng,
+            longitude = googleLocation.location.lng,
             accuracy = googleLocation.accuracy
         )
         locationReceiver(true, currentLocation)

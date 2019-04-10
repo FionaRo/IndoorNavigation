@@ -47,5 +47,7 @@ class LocationScanners(private val context: Context, private val activity: ILoca
     private fun onLocationReceiver(success: Boolean, location: Location?) {
         if (!success)
             activity.showMessage("Cannot get location")
+        else
+            activity.updateLocation(location!!)
     }
 }
