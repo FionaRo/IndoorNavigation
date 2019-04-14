@@ -21,7 +21,8 @@ class WiFiLocationManager(
     private var wifiManager: WifiManager =
         context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
     private val googleApi: GoogleApi = GoogleApi(context)
-    private var mills : Long = System.currentTimeMillis()
+    private var mills: Long = System.currentTimeMillis()
+    private var scanStopped = false
 
     //scan limitations 4 times in 2 minute
     //start scan is deprecated
@@ -39,7 +40,13 @@ class WiFiLocationManager(
         return success
     }
 
+    override fun stopScan() {
+        scanStopped = true
+    }
+
     override fun onReceive(context: Context?, intent: Intent?) {
+        if (scanStopped) return
+
         val success = intent!!.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false)
         if (success) {
             processWifiResult(wifiManager.scanResults)
@@ -78,6 +85,8 @@ class WiFiLocationManager(
     }
 
     private fun onSuccessDetermineLocation(googleLocation: GoogleLocation) {
+        if (scanStopped) return
+
         val currentLocation = Location(
             latitude = googleLocation.location.lat,
             longitude = googleLocation.location.lng,
@@ -87,6 +96,8 @@ class WiFiLocationManager(
     }
 
     private fun onErrorDetermineLocation(error: GoogleError) {
+        if (scanStopped) return
+
         Log.d("wifiManager", error.message)
         locationReceiver(false, null)
     }

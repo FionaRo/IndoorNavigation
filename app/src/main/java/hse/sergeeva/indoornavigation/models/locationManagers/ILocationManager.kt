@@ -4,4 +4,5 @@ import hse.sergeeva.indoornavigation.models.Location
 
 interface ILocationManager {
     fun getLocation(): Boolean
+    fun stopScan()
 }

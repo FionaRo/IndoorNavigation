@@ -18,6 +18,7 @@ class CellLocationManager(
     private val telephonyManager =
         context.applicationContext.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
     private val googleApi: GoogleApi = GoogleApi(context)
+    private var scanStopped = false
 
     @SuppressLint("MissingPermission")
     override fun getLocation(): Boolean {
@@ -31,11 +32,19 @@ class CellLocationManager(
         return true
     }
 
+    override fun stopScan() {
+        scanStopped = true
+    }
+
     private fun processCellInfo(cellInfoList: List<CellInfo>) {
         val googleCellTowers = arrayListOf<GoogleCellTower>()
         for (cellInfo in cellInfoList) {
-            googleCellTowers.add(cellInfoToGoogleCellTower(cellInfo)!!)
+            val cellTower = cellInfoToGoogleCellTower(cellInfo)
+            if (cellTower != null)
+                googleCellTowers.add(cellTower)
         }
+
+        if (scanStopped) return
 
         googleApi.getLocation(
             cellData = googleCellTowers,
@@ -44,7 +53,7 @@ class CellLocationManager(
         )
     }
 
-    public fun cellInfoToGoogleCellTower(cellInfo: CellInfo): GoogleCellTower? {
+    private fun cellInfoToGoogleCellTower(cellInfo: CellInfo): GoogleCellTower? {
         when (cellInfo) {
             is CellInfoGsm -> {
                 val cellIdentity = cellInfo.cellIdentity
@@ -105,6 +114,8 @@ class CellLocationManager(
     }
 
     private fun onSuccessDetermineLocation(googleLocation: GoogleLocation) {
+        if (scanStopped) return
+
         val currentLocation = Location(
             latitude = googleLocation.location.lat,
             longitude = googleLocation.location.lng,
@@ -114,6 +125,8 @@ class CellLocationManager(
     }
 
     private fun onErrorDetermineLocation(error: GoogleError) {
+        if (scanStopped) return
+
         Log.d("CellLocationManager", error.message)
         locationReceiver(false, null)
     }

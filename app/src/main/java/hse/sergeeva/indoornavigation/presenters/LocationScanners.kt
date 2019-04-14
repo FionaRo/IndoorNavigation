@@ -18,12 +18,13 @@ class LocationScanners(private val context: Context, private val activity: ILoca
 
     fun changeLocationManager(locationManagerType: LocationManagerType) {
         if (this.locationManagerType == locationManagerType) return
+        this.locationManager.stopScan()
 
         this.locationManagerType = locationManagerType
         when (locationManagerType) {
             LocationManagerType.WiFi -> locationManager = WiFiLocationManager(context, ::onLocationReceiver)
             LocationManagerType.CellId -> locationManager = CellLocationManager(context, ::onLocationReceiver)
-            LocationManagerType.Beacons -> locationManager = BeaconsLocationManager(context)
+            LocationManagerType.Beacons -> locationManager = BeaconsLocationManager(context, ::onLocationReceiver)
             LocationManagerType.Vlc -> locationManager = VlcLocationManager(context)
         }
     }

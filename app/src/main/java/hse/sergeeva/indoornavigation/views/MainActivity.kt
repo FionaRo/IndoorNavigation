@@ -19,6 +19,9 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import hse.sergeeva.indoornavigation.models.Location
+import android.content.Intent
+import android.provider.Settings
+
 
 class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, ILocationActivity, OnMapReadyCallback {
 
@@ -101,7 +104,10 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
             Manifest.permission.ACCESS_WIFI_STATE,
             Manifest.permission.READ_PHONE_STATE,
             Manifest.permission.ACCESS_NETWORK_STATE,
-            Manifest.permission.INTERNET
+            Manifest.permission.INTERNET,
+            Manifest.permission.BLUETOOTH,
+            Manifest.permission.BLUETOOTH_ADMIN,
+            Manifest.permission.BLUETOOTH_PRIVILEGED
         )
 
         if (!hasPermissions(permission)) {
