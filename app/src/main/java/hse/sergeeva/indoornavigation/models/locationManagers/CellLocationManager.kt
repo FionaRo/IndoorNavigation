@@ -12,6 +12,7 @@ import hse.sergeeva.indoornavigation.models.googleApi.GoogleError
 import hse.sergeeva.indoornavigation.models.googleApi.GoogleLocation
 import hse.sergeeva.indoornavigation.models.openCellIdApi.CellIdCellTower
 import hse.sergeeva.indoornavigation.models.openCellIdApi.CellIdLocation
+import hse.sergeeva.indoornavigation.models.openCellIdApi.CellTowerLocation
 import hse.sergeeva.indoornavigation.models.openCellIdApi.OpenCellIdApi
 
 class CellLocationManager(
@@ -61,8 +62,10 @@ class CellLocationManager(
         val cellIdTowers = arrayListOf<CellIdCellTower>()
         for (cellInfo in cellInfoList) {
             val cellTower = cellInfoToCellIdTower(cellInfo)
-            if (cellTower != null)
+            if (cellTower != null) {
                 cellIdTowers.add(cellTower)
+                cellIdApi.getTowerLocation(cellTower)
+            }
         }
 
         if (scanStopped) return

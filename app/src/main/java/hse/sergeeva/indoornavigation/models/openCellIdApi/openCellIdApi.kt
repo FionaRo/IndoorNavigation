@@ -10,6 +10,7 @@ import com.android.volley.toolbox.Volley
 import com.google.gson.Gson
 import org.json.JSONObject
 import java.nio.charset.Charset
+import kotlin.math.log
 
 class OpenCellIdApi(context: Context) {
     private val server = "https://us1.unwiredlabs.com/v2/process.php"
@@ -40,9 +41,34 @@ class OpenCellIdApi(context: Context) {
             Response.ErrorListener { error ->
                 val errorMessage = error.networkResponse.data.toString(Charset.forName("UTF-8")).replace('\n', ' ')
                 val googleError = gson.fromJson<CellIdLocation>(errorMessage, CellIdLocation::class.java)
-                Log.d("GoogleApi.Geolocation", googleError.message)
+                Log.d("OpenCellId", googleError.message)
                 onError(googleError)
             })
+
+        queue.add(jsonRequest)
+    }
+
+    fun getTowerLocation(cellTower: CellIdCellTower) {
+        val url = "https://api.mylnikov.org/geolocation/cell?v=1.1&data=open&" +
+                "mcc=${cellTower.mcc}&" +
+                "mnc=${cellTower.mnc}&" +
+                "lac=${cellTower.lac}&" +
+                "cellid=${cellTower.cid}"
+        val gson = Gson()
+
+        val jsonRequest = JsonObjectRequest(
+            Request.Method.GET,
+            url,
+            null,
+            Response.Listener<JSONObject> { response ->
+                val respStr = response.toString()
+                val location = gson.fromJson<Data>(respStr, Data::class.java)
+                Log.d("OpenCellIdData", "${location.data.lat},${location.data.lon}")
+            },
+            Response.ErrorListener { error ->
+                Log.d("OpenCellId", "Cannot get cell tower location")
+            }
+        )
 
         queue.add(jsonRequest)
     }

@@ -21,3 +21,14 @@ class CellIdAddressDetails(
     val country_code: Int,
     val postal_code: Int
 )
+
+class CellTowerLocation(
+    val lon: Double,
+    val lat: Double,
+    val range: Double
+)
+
+class Data(
+    val result: Int,
+    val data: CellTowerLocation
+)

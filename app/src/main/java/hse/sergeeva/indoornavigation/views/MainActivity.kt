@@ -174,4 +174,11 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
         }
     }
 
+    override fun setMarker(location: Location) {
+        val latLng = LatLng(location.latitude, location.longitude)
+        val markerOptions = MarkerOptions()
+        markerOptions.position(latLng)
+        map.addMarker(markerOptions)
+    }
+
 }
