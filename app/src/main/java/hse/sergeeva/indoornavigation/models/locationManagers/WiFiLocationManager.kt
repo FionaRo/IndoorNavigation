@@ -7,11 +7,16 @@ import android.content.IntentFilter
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiManager
 import android.util.Log
+import com.android.volley.Response
 import hse.sergeeva.indoornavigation.models.Location
 import hse.sergeeva.indoornavigation.models.googleApi.GoogleApi
 import hse.sergeeva.indoornavigation.models.googleApi.GoogleError
 import hse.sergeeva.indoornavigation.models.googleApi.GoogleLocation
 import hse.sergeeva.indoornavigation.models.googleApi.GoogleWiFiAccessPoint
+import hse.sergeeva.indoornavigation.models.openCellIdApi.CellIdLocation
+import hse.sergeeva.indoornavigation.models.openCellIdApi.CellIdWiFiAccessPoint
+import hse.sergeeva.indoornavigation.models.openCellIdApi.OpenCellIdApi
+import hse.sergeeva.indoornavigation.models.wigletApi.WigletApi
 
 class WiFiLocationManager(
     private val context: Context,
@@ -49,26 +54,16 @@ class WiFiLocationManager(
 
         val success = intent!!.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false)
         if (success) {
-            processWifiResult(wifiManager.scanResults)
+            processWifiResultToCellId(wifiManager.scanResults)
         } else {
             Log.d("WiFiLocationManager", "Cannot get scan results")
             locationReceiver(false, null)
         }
     }
 
-    private fun processWifiResult(scanResults: List<ScanResult>) {
+    private fun processWifiResultToGoogle(scanResults: List<ScanResult>) {
         val wifiData = arrayListOf<GoogleWiFiAccessPoint>()
-        //val wiglet = WigletApi(context)
         for (wifi in scanResults) {
-            /*wiglet.getNetworkDetailByBssid(wifi.BSSID, Response.Listener { resp ->
-                val str = resp.toString()
-            })
-            wiglet.searchNetworkByBssid(wifi.BSSID, Response.Listener { resp ->
-                val str = resp.toString()
-            })
-            wiglet.searchNetworkByName(wifi.SSID, Response.Listener { resp ->
-                val str = resp.toString()
-            })*/
             var channel = 0
             if (wifi.centerFreq0 != 0)
                 channel = (wifi.centerFreq0 - 2412) / 5 + 1
@@ -79,12 +74,48 @@ class WiFiLocationManager(
         }
         googleApi.getLocation(
             wifiData = wifiData,
-            onSuccess = ::onSuccessDetermineLocation,
-            onError = ::onErrorDetermineLocation
+            onSuccess = ::onSuccessDetermineLocationGoogle,
+            onError = ::onErrorDetermineLocationGoogle
         )
     }
 
-    private fun onSuccessDetermineLocation(googleLocation: GoogleLocation) {
+    private fun processWifiResultToWiglet(scanResults: List<ScanResult>) {
+        val wiglet = WigletApi(context)
+        for (wifi in scanResults) {
+            wiglet.getNetworkDetailByBssid(wifi.BSSID, Response.Listener { resp ->
+                val str = resp.toString()
+            })
+            wiglet.searchNetworkByBssid(wifi.BSSID, Response.Listener { resp ->
+                val str = resp.toString()
+            })
+            wiglet.searchNetworkByName(wifi.SSID, Response.Listener { resp ->
+                val str = resp.toString()
+            })
+        }
+    }
+
+    private fun processWifiResultToCellId(scanResults: List<ScanResult>) {
+        val wifiData = arrayListOf<CellIdWiFiAccessPoint>()
+        val openCellIdApi = OpenCellIdApi(context)
+        for (wifi in scanResults) {
+            var channel = 0
+            var freq = 0
+            if (wifi.centerFreq0 != 0) {
+                channel = (wifi.centerFreq0 - 2412) / 5 + 1
+                freq = wifi.centerFreq0
+            } else if (wifi.centerFreq1 != 0) {
+                channel = (wifi.centerFreq1 - 2412) / 5 + 1
+                freq = wifi.centerFreq1
+            }
+
+            wifiData.add(CellIdWiFiAccessPoint(wifi.BSSID, wifi.level, channel = channel, frequency = freq))
+        }
+
+        openCellIdApi.getLocation(wifiData = wifiData, onSuccess = ::onResultCellId, onError = ::onResultCellId)
+    }
+
+
+    private fun onSuccessDetermineLocationGoogle(googleLocation: GoogleLocation) {
         if (scanStopped) return
 
         val currentLocation = Location(
@@ -95,10 +126,25 @@ class WiFiLocationManager(
         locationReceiver(true, currentLocation)
     }
 
-    private fun onErrorDetermineLocation(error: GoogleError) {
+    private fun onErrorDetermineLocationGoogle(error: GoogleError) {
         if (scanStopped) return
 
         Log.d("wifiManager", error.message)
         locationReceiver(false, null)
+    }
+
+    private fun onResultCellId(cellIdLocation: CellIdLocation) {
+        if (scanStopped) return
+
+        if (cellIdLocation.status == "error")
+            locationReceiver(false, null)
+        else {
+            val currentLocation = Location(
+                latitude = cellIdLocation.lat,
+                longitude = cellIdLocation.lon,
+                accuracy = cellIdLocation.accuracy
+            )
+            locationReceiver(true, currentLocation)
+        }
     }
 }
