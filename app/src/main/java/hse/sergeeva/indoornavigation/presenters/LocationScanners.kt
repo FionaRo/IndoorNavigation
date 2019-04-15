@@ -48,6 +48,7 @@ class LocationScanners(private val context: Context, private val activity: ILoca
     }
 
     fun stopScanning() {
+        _isRunning = false
         _isStopped = true
         locationManager.stopScan()
     }
