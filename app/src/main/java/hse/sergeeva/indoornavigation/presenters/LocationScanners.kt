@@ -11,10 +11,8 @@ class LocationScanners(private val context: Context, private val activity: ILoca
 
     private var locationManagerType: LocationManagerType = LocationManagerType.WiFi
     private var locationManager: ILocationManager = WiFiLocationManager(context, ::onLocationReceiver)
-
-    init {
-        scanLocation()
-    }
+    private var _isStopped = false
+    private var _isRunning = false
 
     fun changeLocationManager(locationManagerType: LocationManagerType) {
         if (this.locationManagerType == locationManagerType) return
@@ -29,9 +27,13 @@ class LocationScanners(private val context: Context, private val activity: ILoca
         }
     }
 
-    private fun scanLocation() {
+    fun scanLocation() {
+        if (_isRunning) return
+        _isStopped = false
+        _isRunning = true
+
         DoAsync {
-            while (true) {
+            while (!_isStopped) {
                 try {
                     val success = locationManager.getLocation()
                     if (!success)
@@ -43,6 +45,11 @@ class LocationScanners(private val context: Context, private val activity: ILoca
                 }
             }
         }
+    }
+
+    fun stopScanning() {
+        _isStopped = true
+        locationManager.stopScan()
     }
 
     private fun onLocationReceiver(success: Boolean, location: Location?) {

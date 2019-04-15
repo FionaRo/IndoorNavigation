@@ -67,32 +67,40 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
         super.onResume()
 
         mapView.onResume()
+        locationScanner.scanLocation()
     }
 
     override fun onStart() {
         super.onStart()
 
         mapView.onStart()
+        locationScanner.scanLocation()
     }
 
     override fun onStop() {
-        super.onStop()
-
+        locationScanner.stopScanning()
         mapView.onStop()
+
+        super.onStop()
     }
 
     override fun onPause() {
+        locationScanner.stopScanning()
         mapView.onPause()
+
         super.onPause()
     }
 
     override fun onDestroy() {
+        locationScanner.stopScanning()
         mapView.onDestroy()
+
         super.onDestroy()
     }
 
     override fun onLowMemory() {
         super.onLowMemory()
+
         mapView.onLowMemory()
     }
 
