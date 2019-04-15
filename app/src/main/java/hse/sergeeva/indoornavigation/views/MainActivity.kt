@@ -26,7 +26,7 @@ import android.provider.Settings
 class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, ILocationActivity, OnMapReadyCallback {
 
     private lateinit var navigationMethodsSpinner: Spinner
-    private lateinit var locationScanner: LocationScanners
+    private var locationScanner: LocationScanners? = null
     private lateinit var map: GoogleMap
     private lateinit var mapView: MapView
     private var marker: Marker? = null
@@ -67,32 +67,32 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
         super.onResume()
 
         mapView.onResume()
-        locationScanner.scanLocation()
+        locationScanner?.scanLocation()
     }
 
     override fun onStart() {
         super.onStart()
 
         mapView.onStart()
-        locationScanner.scanLocation()
+        locationScanner?.scanLocation()
     }
 
     override fun onStop() {
-        locationScanner.stopScanning()
+        locationScanner?.stopScanning()
         mapView.onStop()
 
         super.onStop()
     }
 
     override fun onPause() {
-        locationScanner.stopScanning()
+        locationScanner?.stopScanning()
         mapView.onPause()
 
         super.onPause()
     }
 
     override fun onDestroy() {
-        locationScanner.stopScanning()
+        locationScanner?.stopScanning()
         mapView.onDestroy()
 
         super.onDestroy()
@@ -145,16 +145,17 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
 
     override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
         when (position) {
-            0 -> locationScanner.changeLocationManager(LocationManagerType.WiFi)
-            1 -> locationScanner.changeLocationManager(LocationManagerType.CellId)
-            2 -> locationScanner.changeLocationManager(LocationManagerType.Beacons)
-            3 -> locationScanner.changeLocationManager(LocationManagerType.Vlc)
+            0 -> locationScanner!!.changeLocationManager(LocationManagerType.WiFi)
+            1 -> locationScanner!!.changeLocationManager(LocationManagerType.CellId)
+            2 -> locationScanner!!.changeLocationManager(LocationManagerType.Beacons)
+            3 -> locationScanner!!.changeLocationManager(LocationManagerType.Vlc)
         }
     }
 
     override fun onMapReady(map: GoogleMap?) {
         this.map = map!!
         locationScanner = LocationScanners(applicationContext, this)
+        locationScanner!!.scanLocation()
         navigationMethodsSpinner.onItemSelectedListener = this
 
         val nn = LatLng(56.267762, 43.8770023)
