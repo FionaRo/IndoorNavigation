@@ -9,14 +9,12 @@ import android.net.wifi.WifiManager
 import android.util.Log
 import com.android.volley.Response
 import hse.sergeeva.indoornavigation.models.Location
-import hse.sergeeva.indoornavigation.models.googleApi.GoogleApi
-import hse.sergeeva.indoornavigation.models.googleApi.GoogleError
-import hse.sergeeva.indoornavigation.models.googleApi.GoogleLocation
-import hse.sergeeva.indoornavigation.models.googleApi.GoogleWiFiAccessPoint
+import hse.sergeeva.indoornavigation.models.googleApi.*
 import hse.sergeeva.indoornavigation.models.openCellIdApi.CellIdLocation
 import hse.sergeeva.indoornavigation.models.openCellIdApi.CellIdWiFiAccessPoint
 import hse.sergeeva.indoornavigation.models.openCellIdApi.OpenCellIdApi
 import hse.sergeeva.indoornavigation.models.wigletApi.WigletApi
+import hse.sergeeva.indoornavigation.models.yandexApi.*
 
 class WiFiLocationManager(
     private val context: Context,
@@ -28,6 +26,9 @@ class WiFiLocationManager(
     private val googleApi: GoogleApi = GoogleApi(context)
     private var mills: Long = System.currentTimeMillis()
     private var scanStopped = false
+    private val openCellIdApi = OpenCellIdApi(context)
+    private val yandexApi = YandexApi(context)
+
 
     //scan limitations 4 times in 2 minute
     //start scan is deprecated
@@ -54,7 +55,7 @@ class WiFiLocationManager(
 
         val success = intent!!.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false)
         if (success) {
-            processWifiResultToCellId(wifiManager.scanResults)
+            processWifiResultToYandex(wifiManager.scanResults)
         } else {
             Log.d("WiFiLocationManager", "Cannot get scan results")
             locationReceiver(false, null)
@@ -114,6 +115,14 @@ class WiFiLocationManager(
         openCellIdApi.getLocation(wifiData = wifiData, onSuccess = ::onResultCellId, onError = ::onResultCellId)
     }
 
+    private fun processWifiResultToYandex(scanResults: List<ScanResult>) {
+        val wifiData = arrayListOf<YandexWifiPoint>()
+        for (wifi in scanResults) {
+            wifiData.add(YandexWifiPoint(wifi.BSSID, wifi.level))
+        }
+
+        yandexApi.getLocation(wifiData = wifiData, onSuccess = ::onSuccessDetermineLocationYandex, onError = ::onErrorDetermineLocationYandex)
+    }
 
     private fun onSuccessDetermineLocationGoogle(googleLocation: GoogleLocation) {
         if (scanStopped) return
@@ -147,4 +156,23 @@ class WiFiLocationManager(
             locationReceiver(true, currentLocation)
         }
     }
+
+    private fun onSuccessDetermineLocationYandex(yandexLocation: YandexReturnObject) {
+        if (scanStopped) return
+
+        val currentLocation = Location(
+            latitude = yandexLocation.position.latitude,
+            longitude = yandexLocation.position.longitude,
+            accuracy = yandexLocation.position.precision.toInt()
+        )
+        locationReceiver(true, currentLocation)
+    }
+
+    private fun onErrorDetermineLocationYandex(error: YandexReturnError) {
+        if (scanStopped) return
+
+        Log.d("wifiManager", error.error.message)
+        locationReceiver(false, null)
+    }
+
 }

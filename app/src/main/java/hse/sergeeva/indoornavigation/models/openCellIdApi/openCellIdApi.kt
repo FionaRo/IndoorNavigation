@@ -10,7 +10,6 @@ import com.android.volley.toolbox.Volley
 import com.google.gson.Gson
 import org.json.JSONObject
 import java.nio.charset.Charset
-import kotlin.math.log
 
 class OpenCellIdApi(context: Context) {
     private val server = "https://us1.unwiredlabs.com/v2/process.php"

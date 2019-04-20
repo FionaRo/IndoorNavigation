@@ -6,14 +6,14 @@ import android.os.Build
 import android.telephony.*
 import android.util.Log
 import hse.sergeeva.indoornavigation.models.Location
-import hse.sergeeva.indoornavigation.models.googleApi.GoogleApi
-import hse.sergeeva.indoornavigation.models.googleApi.GoogleCellTower
-import hse.sergeeva.indoornavigation.models.googleApi.GoogleError
-import hse.sergeeva.indoornavigation.models.googleApi.GoogleLocation
+import hse.sergeeva.indoornavigation.models.googleApi.*
 import hse.sergeeva.indoornavigation.models.openCellIdApi.CellIdCellTower
 import hse.sergeeva.indoornavigation.models.openCellIdApi.CellIdLocation
-import hse.sergeeva.indoornavigation.models.openCellIdApi.CellTowerLocation
 import hse.sergeeva.indoornavigation.models.openCellIdApi.OpenCellIdApi
+import hse.sergeeva.indoornavigation.models.yandexApi.YandexApi
+import hse.sergeeva.indoornavigation.models.yandexApi.YandexCellTower
+import hse.sergeeva.indoornavigation.models.yandexApi.YandexReturnError
+import hse.sergeeva.indoornavigation.models.yandexApi.YandexReturnObject
 
 class CellLocationManager(
     context: Context,
@@ -23,6 +23,7 @@ class CellLocationManager(
         context.applicationContext.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
     private val googleApi: GoogleApi = GoogleApi(context)
     private val cellIdApi: OpenCellIdApi = OpenCellIdApi(context)
+    private val yandexApi: YandexApi = YandexApi(context)
     private var scanStopped = false
 
     @SuppressLint("MissingPermission")
@@ -33,7 +34,7 @@ class CellLocationManager(
             return false
         }
 
-        processCellInfoToCellId(allCellInfo)
+        processCellInfoToYandex(allCellInfo)
         return true
     }
 
@@ -53,8 +54,8 @@ class CellLocationManager(
 
         googleApi.getLocation(
             cellData = googleCellTowers,
-            onSuccess = ::onSuccessDetermineLocation,
-            onError = ::onErrorDetermineLocation
+            onSuccess = ::onSuccessDetermineLocationGoogle,
+            onError = ::onErrorDetermineLocationGoogle
         )
     }
 
@@ -74,6 +75,23 @@ class CellLocationManager(
             cellData = cellIdTowers,
             onSuccess = ::onResultCellId,
             onError = ::onResultCellId
+        )
+    }
+
+    private fun processCellInfoToYandex(cellInfoList: List<CellInfo>) {
+        val cellIdTowers = arrayListOf<YandexCellTower>()
+        for (cellInfo in cellInfoList) {
+            val cellTower = cellInfoToYandexCellTower(cellInfo)
+            if (cellTower != null)
+                cellIdTowers.add(cellTower)
+        }
+
+        if (scanStopped) return
+
+        yandexApi.getLocation(
+            cellData = cellIdTowers,
+            onSuccess = ::onSuccessDetermineLocationYandex,
+            onError = ::onErrorDetermineLocationYandex
         )
     }
 
@@ -201,7 +219,65 @@ class CellLocationManager(
 
     }
 
-    private fun onSuccessDetermineLocation(googleLocation: GoogleLocation) {
+    private fun cellInfoToYandexCellTower(cellInfo: CellInfo): YandexCellTower? {
+        when (cellInfo) {
+            is CellInfoGsm -> {
+                val cellIdentity = cellInfo.cellIdentity
+                val signalStrength = cellInfo.cellSignalStrength
+
+                var timingAdvance = 0
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) timingAdvance = signalStrength.timingAdvance
+
+                return YandexCellTower(
+                    cellid = cellIdentity.cid,
+                    lac = cellIdentity.lac,
+                    countrycode = cellIdentity.mcc,
+                    operatorid = cellIdentity.mnc,
+                    signal_strength = signalStrength.dbm
+                )
+            }
+            is CellInfoLte -> {
+                val cellIdentity = cellInfo.cellIdentity
+                val signalStrength = cellInfo.cellSignalStrength
+
+                return YandexCellTower(
+                    cellid = cellIdentity.ci,
+                    lac = cellIdentity.tac,
+                    countrycode = cellIdentity.mcc,
+                    operatorid = cellIdentity.mnc,
+                    signal_strength = signalStrength.dbm
+                )
+            }
+            is CellInfoWcdma -> {
+                val cellIdentity = cellInfo.cellIdentity
+                val signalStrength = cellInfo.cellSignalStrength
+
+                return YandexCellTower(
+                    cellid = cellIdentity.cid,
+                    lac = cellIdentity.lac,
+                    countrycode = cellIdentity.mcc,
+                    operatorid = cellIdentity.mnc,
+                    signal_strength = signalStrength.dbm
+                )
+            }
+            is CellInfoCdma -> {
+                val cellIdentity = cellInfo.cellIdentity
+                val signalStrength = cellInfo.cellSignalStrength
+
+                return YandexCellTower(
+                    cellid = cellIdentity.basestationId,
+                    lac = cellIdentity.networkId,
+                    countrycode = cellIdentity.systemId,
+                    operatorid = cellIdentity.systemId,
+                    signal_strength = signalStrength.dbm
+                )
+            }
+            else -> return null
+        }
+
+    }
+
+    private fun onSuccessDetermineLocationGoogle(googleLocation: GoogleLocation) {
         if (scanStopped) return
 
         val currentLocation = Location(
@@ -212,7 +288,7 @@ class CellLocationManager(
         locationReceiver(true, currentLocation)
     }
 
-    private fun onErrorDetermineLocation(error: GoogleError) {
+    private fun onErrorDetermineLocationGoogle(error: GoogleError) {
         if (scanStopped) return
 
         Log.d("CellLocationManager", error.message)
@@ -232,5 +308,23 @@ class CellLocationManager(
             )
             locationReceiver(true, currentLocation)
         }
+    }
+
+    private fun onSuccessDetermineLocationYandex(yandexLocation: YandexReturnObject) {
+        if (scanStopped) return
+
+        val currentLocation = Location(
+            latitude = yandexLocation.position.latitude,
+            longitude = yandexLocation.position.longitude,
+            accuracy = yandexLocation.position.precision.toInt()
+        )
+        locationReceiver(true, currentLocation)
+    }
+
+    private fun onErrorDetermineLocationYandex(yandexError: YandexReturnError) {
+        if (scanStopped) return
+
+        Log.d("CellLocationManager", yandexError.error.message)
+        locationReceiver(false, null)
     }
 }
