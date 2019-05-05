@@ -121,7 +121,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
             Manifest.permission.INTERNET,
             Manifest.permission.BLUETOOTH,
             Manifest.permission.BLUETOOTH_ADMIN,
-            Manifest.permission.BLUETOOTH_PRIVILEGED
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.CAMERA
         )
 
         if (!hasPermissions(permission)) {

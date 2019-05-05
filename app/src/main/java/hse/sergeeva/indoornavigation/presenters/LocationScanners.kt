@@ -1,10 +1,12 @@
 package hse.sergeeva.indoornavigation.presenters
 
 import android.content.Context
+import android.os.AsyncTask.execute
 import android.util.Log
 import hse.sergeeva.indoornavigation.models.Location
 import hse.sergeeva.indoornavigation.models.locationManagers.*
 import hse.sergeeva.indoornavigation.views.ILocationActivity
+import kotlinx.coroutines.*
 import java.lang.Exception
 
 class LocationScanners(private val context: Context, private val activity: ILocationActivity) {
@@ -32,16 +34,17 @@ class LocationScanners(private val context: Context, private val activity: ILoca
         _isStopped = false
         _isRunning = true
 
-        DoAsync {
+        GlobalScope.launch {
             while (!_isStopped) {
                 try {
                     val success = locationManager.getLocation()
                     if (!success)
                         activity.showMessage("Error in getLocation")
+                    activity.updateData()
                 } catch (e: Exception) {
                     Log.d("LocationScanner", e.message)
                 } finally {
-                    Thread.sleep(500)
+                    Thread.sleep(2000)
                 }
             }
         }
