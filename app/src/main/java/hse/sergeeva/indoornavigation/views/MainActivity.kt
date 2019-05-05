@@ -4,24 +4,22 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.PersistableBundle
+import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.*
-import android.support.v4.app.ActivityCompat
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.OnMapReadyCallback
-import hse.sergeeva.indoornavigation.R
-import hse.sergeeva.indoornavigation.models.locationManagers.LocationManagerType
-import hse.sergeeva.indoornavigation.presenters.LocationScanners
-import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import hse.sergeeva.indoornavigation.R
 import hse.sergeeva.indoornavigation.models.Location
-import android.content.Intent
-import android.provider.Settings
-
+import hse.sergeeva.indoornavigation.models.TowerStatistics
+import hse.sergeeva.indoornavigation.models.locationManagers.LocationManagerType
+import hse.sergeeva.indoornavigation.presenters.LocationScanners
 
 class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, ILocationActivity, OnMapReadyCallback {
 
@@ -30,6 +28,9 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
     private lateinit var map: GoogleMap
     private lateinit var mapView: MapView
     private var marker: Marker? = null
+    private var allTowers: TextView? = null
+    private var cellId: TextView? = null
+    private var myLinkov: TextView? = null
     private val mapViewBundleKey = "MapViewBundleKey"
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,6 +49,11 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
         mapView = findViewById(R.id.mapView)
         mapView.onCreate(mapViewBundle)
         mapView.getMapAsync(this)
+
+        allTowers = findViewById(R.id.allTowers)
+        cellId = findViewById(R.id.cellIdTowers)
+        myLinkov = findViewById(R.id.myLinkovTowers)
+
         checkPermissions()
     }
 
@@ -179,6 +185,18 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
         val markerOptions = MarkerOptions()
         markerOptions.position(latLng)
         map.addMarker(markerOptions)
+    }
+
+    override fun updateData() {
+        allTowers?.text = "All Towers: ${TowerStatistics.allTowers}"
+        cellId?.text =
+            "CellId. Found: ${TowerStatistics.foundTowersOpenCellId}. " +
+                    "Not found: ${TowerStatistics.notFoundTowersOpenCellId}. " +
+                    "Duplicate: ${TowerStatistics.duplicateCellId}"
+        myLinkov?.text =
+            "MyLinkov. Found: ${TowerStatistics.foundTowersMylnikov}. " +
+                    "Not found: ${TowerStatistics.notFoundTowersMylnikov}. " +
+                    "Duplicate: ${TowerStatistics.duplicateMyLinkov}"
     }
 
 }

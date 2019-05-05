@@ -25,16 +25,18 @@ class CellLocationManager(
     private val cellIdApi: OpenCellIdApi = OpenCellIdApi(context)
     private val yandexApi: YandexApi = YandexApi(context)
     private var scanStopped = false
+    private val cells: HashSet<String> = hashSetOf()
 
     @SuppressLint("MissingPermission")
     override fun getLocation(): Boolean {
         val allCellInfo = telephonyManager.allCellInfo
+        telephonyManager.neighboringCellInfo
         if (allCellInfo.size == 0) {
             Log.d("CellLocationManager", "Cannot get cell info")
             return false
         }
 
-        processCellInfoToYandex(allCellInfo)
+        processCellInfoToCellId(allCellInfo)
         return true
     }
 
@@ -60,22 +62,27 @@ class CellLocationManager(
     }
 
     private fun processCellInfoToCellId(cellInfoList: List<CellInfo>) {
-        val cellIdTowers = arrayListOf<CellIdCellTower>()
+        //val cellIdTowers = arrayListOf<CellIdCellTower>()
         for (cellInfo in cellInfoList) {
             val cellTower = cellInfoToCellIdTower(cellInfo)
             if (cellTower != null) {
-                cellIdTowers.add(cellTower)
+
+                val id = "${cellTower.cid};${cellTower.lac};${cellTower.mnc};${cellTower.mcc}"
+                if (cells.contains(id)) continue
+
+                cells.add(id)
+                //cellIdTowers.add(cellTower)
                 cellIdApi.getTowerLocation(cellTower)
             }
         }
 
         if (scanStopped) return
 
-        cellIdApi.getLocation(
-            cellData = cellIdTowers,
-            onSuccess = ::onResultCellId,
-            onError = ::onResultCellId
-        )
+//        cellIdApi.getLocation(
+//            cellData = cellIdTowers,
+//            onSuccess = ::onResultCellId,
+//            onError = ::onResultCellId
+//        )
     }
 
     private fun processCellInfoToYandex(cellInfoList: List<CellInfo>) {

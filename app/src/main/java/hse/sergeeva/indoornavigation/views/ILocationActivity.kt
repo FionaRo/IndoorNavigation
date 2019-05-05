@@ -7,4 +7,5 @@ interface ILocationActivity {
     fun showMessage(message: String)
     fun updateLocation(location: Location)
     fun setMarker(location: Location)
+    fun updateData()
 }

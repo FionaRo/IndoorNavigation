@@ -30,5 +30,7 @@ class CellTowerLocation(
 
 class Data(
     val result: Int,
-    val data: CellTowerLocation
+    val data: CellTowerLocation,
+    val message: String,
+    val desc: String
 )

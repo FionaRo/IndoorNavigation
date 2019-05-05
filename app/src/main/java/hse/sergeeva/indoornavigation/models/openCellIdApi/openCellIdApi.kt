@@ -1,6 +1,7 @@
 package hse.sergeeva.indoornavigation.models.openCellIdApi
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.util.Log
 import com.android.volley.Request
 import com.android.volley.RequestQueue
@@ -8,6 +9,7 @@ import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
 import com.google.gson.Gson
+import hse.sergeeva.indoornavigation.models.TowerStatistics
 import org.json.JSONObject
 import java.nio.charset.Charset
 
@@ -15,6 +17,8 @@ class OpenCellIdApi(context: Context) {
     private val server = "https://us1.unwiredlabs.com/v2/process.php"
     private val apiKey = "ed6a3ab2fbdd25"
     private val queue: RequestQueue = Volley.newRequestQueue(context.applicationContext)
+    val cellIdLocations: HashSet<String> = hashSetOf()
+    val myLinkovLocations: HashSet<String> = hashSetOf()
 
     fun getLocation(
         wifiData: ArrayList<CellIdWiFiAccessPoint> = arrayListOf(),
@@ -48,11 +52,20 @@ class OpenCellIdApi(context: Context) {
     }
 
     fun getTowerLocation(cellTower: CellIdCellTower) {
+        TowerStatistics.allTowers++
+
         val url = "https://api.mylnikov.org/geolocation/cell?v=1.1&data=open&" +
                 "mcc=${cellTower.mcc}&" +
                 "mnc=${cellTower.mnc}&" +
                 "lac=${cellTower.lac}&" +
                 "cellid=${cellTower.cid}"
+
+        val url2 = "https://opencellid.org/ajax/searchCell.php?" +
+                "mcc=${cellTower.mcc}&" +
+                "mnc=${cellTower.mnc}&" +
+                "lac=${cellTower.lac}&" +
+                "cell_id=${cellTower.cid}"
+
         val gson = Gson()
 
         val jsonRequest = JsonObjectRequest(
@@ -62,13 +75,53 @@ class OpenCellIdApi(context: Context) {
             Response.Listener<JSONObject> { response ->
                 val respStr = response.toString()
                 val location = gson.fromJson<Data>(respStr, Data::class.java)
-                Log.d("OpenCellIdData", "${location.data.lat},${location.data.lon}")
+                if (location.result != 200 || location.data.lon == 0.0) {
+                    TowerStatistics.notFoundTowersMylnikov++
+                    Log.d("MylnikovAPIError", location.desc)
+                } else {
+                    val id = "${location.data.lat},${location.data.lon}"
+                    if (myLinkovLocations.contains(id))
+                        TowerStatistics.duplicateMyLinkov++
+                    else {
+                        myLinkovLocations.add(id)
+                        TowerStatistics.foundTowersMylnikov++
+                        Log.d("MylnikovAPI", id)
+                    }
+                }
             },
             Response.ErrorListener { error ->
-                Log.d("OpenCellId", "Cannot get cell tower location")
+                TowerStatistics.notFoundTowersMylnikov++
+                Log.d("MylnikovAPIError", "Cannot get cell tower location")
+            }
+        )
+
+        val jsonRequest2 = JsonObjectRequest(
+            Request.Method.GET,
+            url2,
+            null,
+            Response.Listener<JSONObject> { response ->
+                val respStr = response.toString()
+                val location = gson.fromJson<CellTowerLocation>(respStr, CellTowerLocation::class.java)
+                if (location.lon == 0.0) {
+                    TowerStatistics.notFoundTowersOpenCellId++
+                } else {
+                    val id = "${location.lat},${location.lon}"
+                    if (cellIdLocations.contains(id))
+                        TowerStatistics.duplicateCellId++
+                    else {
+                        cellIdLocations.add(id)
+                        TowerStatistics.foundTowersOpenCellId++
+                        Log.d("CellIdAPI", "${location.lat},${location.lon}")
+                    }
+                }
+            },
+            Response.ErrorListener { error ->
+                TowerStatistics.notFoundTowersOpenCellId++
+                Log.d("CellIdAPI", "Cannot get cell tower location")
             }
         )
 
         queue.add(jsonRequest)
+        queue.add(jsonRequest2)
     }
 }
