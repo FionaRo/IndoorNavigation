@@ -18,7 +18,10 @@ class ImageListener : ImageReader.OnImageAvailableListener {
     }
 
     override fun onImageAvailable(reader: ImageReader?) {
-        Log.d("Camera", "Image")
+        Log.d("Camera", "Image " + message.size)
+
+        val index = message.size
+        message += 0
 
         try {
             val image: Image = reader!!.acquireLatestImage()
@@ -43,9 +46,9 @@ class ImageListener : ImageReader.OnImageAvailableListener {
             val pixCount: Int = bitmapImage.width / 5 * bitmapImage.height / 5
 
             if (meanRed / pixCount < 128 && meanGreen / pixCount < 128 && meanBlue / pixCount < 128)
-                message += 0
+                message[index] = 0
             else
-                message += 1
+                message[index] = 1
 
         } catch (ex: Exception) {
             Log.d("ImageListener", "Error reading image")

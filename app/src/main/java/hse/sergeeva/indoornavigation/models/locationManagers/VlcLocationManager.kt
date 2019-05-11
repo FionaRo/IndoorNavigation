@@ -22,7 +22,7 @@ class VlcLocationManager(private val context: Context) : ILocationManager {
             try {
                 while (true) {
                     DeviceCallback.makeRequest()
-                    Thread.sleep(600)
+                    Thread.sleep(300)
                 }
             } catch (ex: Exception) {
                 Log.d("VlcLocationManager", ex.message)
@@ -39,7 +39,7 @@ class VlcLocationManager(private val context: Context) : ILocationManager {
     }
 
     override fun getLocation(): Boolean {
-        if (ImageListener.message.size < (12 + 8)*3) return true
+        if (ImageListener.message.size < 150) return true
 
         val msg = ImageListener.message.toList()
         val code = ManchesterDecoder.decode(msg)

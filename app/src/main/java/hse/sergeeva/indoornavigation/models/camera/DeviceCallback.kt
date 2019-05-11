@@ -29,7 +29,7 @@ class DeviceCallback(imageReader: ImageReader) : CameraCaptureSession.StateCallb
             if (session == null || surface == null) return
 
             try {
-                val captureRequest = session!!.device.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
+                val captureRequest = session!!.device.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
                 captureRequest.addTarget(surface!!)
                 //captureRequest.set(CaptureRequest.BLACK_LEVEL_LOCK, true)
                 //captureRequest.set(

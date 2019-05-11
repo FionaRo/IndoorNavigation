@@ -63,7 +63,7 @@ function addPreambule(binary) {
 }
 
 let currentState = 0
-let tact = 2000
+let tact = 3000
 let i = 0
 
 function setInitState() {
@@ -101,6 +101,16 @@ function changeBackground(state) {
     } else {
         document.getElementsByTagName("body")[0].style.backgroundColor = "white";
     }
+}
+
+let k = 0
+
+function time() {
+    k++;
+    if (k<45)
+        setTimeout(time, 600);
+    else
+        console.log("END")
 }
 
 const ID = 13;
