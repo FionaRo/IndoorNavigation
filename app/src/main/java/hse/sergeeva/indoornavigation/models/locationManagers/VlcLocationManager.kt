@@ -7,7 +7,7 @@ import android.util.Log
 import hse.sergeeva.indoornavigation.models.camera.CameraCallback
 import hse.sergeeva.indoornavigation.models.camera.DeviceCallback
 import hse.sergeeva.indoornavigation.models.camera.ImageListener
-import hse.sergeeva.indoornavigation.presenters.decoders.ManchesterDecoder
+import hse.sergeeva.indoornavigation.models.decoders.ManchesterDecoder
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.lang.Exception

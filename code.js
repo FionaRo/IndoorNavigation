@@ -7,7 +7,7 @@ function intToBinary(id, len) {
     return binary.reverse();
 }
 
-function getMatrixHemming(width, height) {
+function getMatrixHamming(width, height) {
     let matrix = [];
 
     for (let i = 0; i < width; i++) {
@@ -23,7 +23,7 @@ function getMatrixHemming(width, height) {
     return matrix;
 }
 
-function encodeHemming(binary) {
+function encodeHamming(binary) {
     let extendedArr = [];
     let baseArrIndex = 0;
     let twoPow = 1;
@@ -39,7 +39,7 @@ function encodeHemming(binary) {
         }
     }
 
-    let matrix = getMatrixHemming(extendedArr.length, powsIndex.length)
+    let matrix = getMatrixHamming(extendedArr.length, powsIndex.length)
     let powsNum = []
 
     for (let i = 0; i < powsIndex.length; i++) {
@@ -105,7 +105,7 @@ function changeBackground(state) {
 
 const ID = 13;
 let code = intToBinary(ID, 8)
-code = encodeHemming(code)
+code = encodeHamming(code)
 code = addPreambule(code)
 
 setInitState()

@@ -1,9 +1,9 @@
-package hse.sergeeva.indoornavigation.presenters.decoders
+package hse.sergeeva.indoornavigation.models.decoders
 
 class ManchesterDecoder {
     companion object {
 
-        private val messageLen = 8
+        private val messageLen = 12
 
         fun decode(bytes: List<Int>): Int {
 
@@ -54,11 +54,11 @@ class ManchesterDecoder {
             }
 
             val preambleEnd = findPreamble(originBytes)
-            if (preambleEnd == -1 || preambleEnd + messageLen > bytes.size) return Pair(false, -1)
+            if (preambleEnd == -1 || preambleEnd + messageLen > originBytes.size) return Pair(false, -1)
 
             val messageBytes = arrayListOf<Int>()
-            for (i in preambleEnd until preambleEnd + 8) {
-                messageBytes.add(bytes[i])
+            for (i in preambleEnd until preambleEnd + messageLen) {
+                messageBytes.add(originBytes[i])
             }
 
             return HammingDecoder.decode(messageBytes)
@@ -95,7 +95,7 @@ class ManchesterDecoder {
                 if (i + preamble.size - 1 > bytes.size) return -1
                 var found = 8
                 for (j in 0 until preamble.size) {
-                    if (bytes[i + j] != bytes[i]) {
+                    if (bytes[i + j] != preamble[j]) {
                         found = j
                         break
                     }

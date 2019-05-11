@@ -1,8 +1,9 @@
-package hse.sergeeva.indoornavigation.presenters.decoders
+package hse.sergeeva.indoornavigation.models.decoders
 
 import java.lang.Math.log
 import kotlin.experimental.and
 import kotlin.math.ceil
+import kotlin.math.log2
 
 class HammingDecoder {
 
@@ -10,45 +11,48 @@ class HammingDecoder {
         private fun getMatrix(width: Int): ArrayList<ByteArray> {
             val matrix = arrayListOf<ByteArray>()
 
-            val height = ceil(log(width.toDouble())).toInt()
+            val height = ceil(log2(width.toDouble())).toInt()
 
             for (i in 0 until width) {
                 matrix.add(ByteArray(height))
                 var t = i + 1
                 for (j in 0 until height) {
                     matrix[i][j] = (t % 2).toByte()
-                    t = t shr 2
+                    t = t shr 1
                 }
             }
+
+            val newMatrix = arrayListOf<ByteArray>()
+
+            for (i in 0 until height)
+                newMatrix.add(ByteArray(width))
 
             for (i in 0 until width) {
                 for (j in 0 until height) {
-                    val t = matrix[i][j]
-                    matrix[i][j] = matrix[j][i]
-                    matrix[j][i] = t
+                    newMatrix[j][i] = matrix[i][j]
                 }
             }
 
-            return matrix
+            return newMatrix
         }
 
         private fun binaryToInt(binary: ArrayList<Int>): Int {
             var code = 0
             for (i in 0 until binary.size) {
-                code += i and (2 shl (binary.size - i))
+                code += binary[i] * (1 shl (binary.size - i - 1))
             }
             return code
         }
 
         private fun checkDecode(binary: ArrayList<Int>, matrix: ArrayList<ByteArray>): ArrayList<Int> {
-            val check = ArrayList<Int>(matrix.size)
+            val check = arrayListOf<Int>()
             var decodeOk = true
             for (i in 0 until matrix.size) {
                 var sum = 0
                 for (j in 0 until binary.size) {
                     sum += matrix[i][j] and binary[j].toByte()
                 }
-                check[i] = (sum % 2)
+                check.add(sum % 2)
                 if (check[i] != 0)
                     decodeOk = false
             }
