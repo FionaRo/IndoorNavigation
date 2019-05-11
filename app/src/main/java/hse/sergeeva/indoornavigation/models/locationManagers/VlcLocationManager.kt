@@ -7,6 +7,7 @@ import android.util.Log
 import hse.sergeeva.indoornavigation.models.camera.CameraCallback
 import hse.sergeeva.indoornavigation.models.camera.DeviceCallback
 import hse.sergeeva.indoornavigation.models.camera.ImageListener
+import hse.sergeeva.indoornavigation.models.camera.ImageListener.Companion.message
 import hse.sergeeva.indoornavigation.models.decoders.ManchesterDecoder
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -21,7 +22,7 @@ class VlcLocationManager(private val context: Context) : ILocationManager {
             try {
                 while (true) {
                     DeviceCallback.makeRequest()
-                    Thread.sleep(500)
+                    Thread.sleep(600)
                 }
             } catch (ex: Exception) {
                 Log.d("VlcLocationManager", ex.message)
@@ -38,11 +39,13 @@ class VlcLocationManager(private val context: Context) : ILocationManager {
     }
 
     override fun getLocation(): Boolean {
-        if (ImageListener.message.size < 8 + 8 + 3) return true
+        if (ImageListener.message.size < (12 + 8)*3) return true
 
         val msg = ImageListener.message.toList()
         val code = ManchesterDecoder.decode(msg)
         if (code == -1) return false
+
+        ImageListener.message.clear()
         return true
     }
 

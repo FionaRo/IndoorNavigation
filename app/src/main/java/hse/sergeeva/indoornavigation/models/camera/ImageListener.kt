@@ -40,7 +40,7 @@ class ImageListener : ImageReader.OnImageAvailableListener {
                     meanGreen += Color.green(color)
                 }
             }
-            val pixCount: Int = bitmapImage.width * bitmapImage.height
+            val pixCount: Int = bitmapImage.width / 5 * bitmapImage.height / 5
 
             if (meanRed / pixCount < 128 && meanGreen / pixCount < 128 && meanBlue / pixCount < 128)
                 message += 0

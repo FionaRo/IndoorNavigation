@@ -20,6 +20,7 @@ import hse.sergeeva.indoornavigation.models.Location
 import hse.sergeeva.indoornavigation.models.TowerStatistics
 import hse.sergeeva.indoornavigation.models.locationManagers.LocationManagerType
 import hse.sergeeva.indoornavigation.presenters.LocationScanners
+import hse.sergeeva.indoornavigation.presenters.UiRunner
 
 class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, ILocationActivity, OnMapReadyCallback {
 
@@ -55,6 +56,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
         myLinkov = findViewById(R.id.myLinkovTowers)
 
         checkPermissions()
+        UiRunner.activity = this
     }
 
     override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
@@ -72,6 +74,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
     override fun onResume() {
         super.onResume()
 
+        UiRunner.activity = this
         mapView.onResume()
         locationScanner?.scanLocation()
     }
@@ -79,6 +82,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
     override fun onStart() {
         super.onStart()
 
+        UiRunner.activity = this
         mapView.onStart()
         locationScanner?.scanLocation()
     }
@@ -86,6 +90,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
     override fun onStop() {
         locationScanner?.stopScanning()
         mapView.onStop()
+        UiRunner.activity = null
 
         super.onStop()
     }
@@ -93,6 +98,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
     override fun onPause() {
         locationScanner?.stopScanning()
         mapView.onPause()
+        UiRunner.activity = null
 
         super.onPause()
     }
@@ -100,6 +106,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
     override fun onDestroy() {
         locationScanner?.stopScanning()
         mapView.onDestroy()
+        UiRunner.activity = null
 
         super.onDestroy()
     }

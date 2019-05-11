@@ -1,6 +1,5 @@
 package hse.sergeeva.indoornavigation.models.decoders
 
-import java.lang.Math.log
 import kotlin.experimental.and
 import kotlin.math.ceil
 import kotlin.math.log2
