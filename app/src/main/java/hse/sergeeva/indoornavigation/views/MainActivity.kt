@@ -65,7 +65,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
 
         val uiSettings = MapwizeFragmentUISettings.Builder()
             .menuButtonHidden(true)
-            .followUserButtonHidden(true)
+            .followUserButtonHidden(false)
             .floorControllerHidden(false)
             .compassHidden(false)
             .build()
