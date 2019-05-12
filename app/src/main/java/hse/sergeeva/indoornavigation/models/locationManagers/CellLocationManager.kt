@@ -36,7 +36,7 @@ class CellLocationManager(
             return false
         }
 
-        processCellInfoToCellId(allCellInfo)
+        processCellInfoToGoogle(allCellInfo)
         return true
     }
 

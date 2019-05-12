@@ -10,10 +10,13 @@ import android.util.Log
 import android.view.View
 import android.widget.*
 import com.mapbox.mapboxsdk.Mapbox
+import com.mapbox.mapboxsdk.annotations.MarkerOptions
+import com.mapbox.mapboxsdk.camera.CameraPosition
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
 import com.mapbox.mapboxsdk.geometry.LatLng
 import com.mapbox.mapboxsdk.maps.MapView
 import com.mapbox.mapboxsdk.maps.MapboxMap
+import com.mapbox.mapboxsdk.maps.MapboxMapOptions
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback
 //import com.google.android.gms.maps.CameraUpdateFactory
 //import com.google.android.gms.maps.GoogleMap
@@ -29,6 +32,7 @@ import hse.sergeeva.indoornavigation.models.locationManagers.LocationManagerType
 import hse.sergeeva.indoornavigation.presenters.LocationScanners
 import hse.sergeeva.indoornavigation.presenters.UiRunner
 import io.mapwize.mapwizeformapbox.AccountManager
+import io.mapwize.mapwizeformapbox.api.LatLngFloor
 import io.mapwize.mapwizeformapbox.map.MapOptions
 import io.mapwize.mapwizeformapbox.map.MapwizePlugin
 import io.mapwize.mapwizeformapbox.map.MapwizePluginFactory
@@ -67,13 +71,11 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener,
         mapView.onCreate(savedInstanceState)
 
         val options = MapOptions.Builder()
+            .centerOnVenue("hse_university")
+            .floor(1.0)
             .build()
 
         mapwizePlugin = MapwizePluginFactory.create(mapView, options)
-        mapwizePlugin.setOnDidLoadListener { mapwizePlugin ->
-            // Mapwize is ready to use
-        }
-
 
 //        var mapViewBundle: Bundle? = null
 //        if (savedInstanceState != null) mapViewBundle = savedInstanceState.getBundle(mapViewBundleKey)
@@ -212,22 +214,18 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener,
     }
 
     override fun updateLocation(location: Location) {
-//        val latLng = LatLng(location.latitude, location.longitude)
-//
-//        if (marker == null) {
-//            val markerOptions = MarkerOptions()
-//            markerOptions.position(latLng)
-//            marker = map.addMarker(markerOptions)
-//        } else {
-//            marker!!.position = latLng
-//        }
+        val latLng = LatLng(location.latitude, location.longitude)
+
+        if (marker == null) {
+            marker = mapwizePlugin.addMarker(LatLngFloor(latLng))
+        } else {
+            marker!!.latLngFloor = LatLngFloor(latLng)
+        }
     }
 
     override fun setMarker(location: Location) {
-//        val latLng = LatLng(location.latitude, location.longitude)
-//        val markerOptions = MarkerOptions()
-//        markerOptions.position(latLng)
-//        map.addMarker(markerOptions)
+        val latLng = LatLng(location.latitude, location.longitude)
+        mapwizePlugin.addMarker(LatLngFloor(latLng))
     }
 
     override fun updateData() {
