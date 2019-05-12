@@ -6,28 +6,43 @@ import android.os.Bundle
 import android.os.PersistableBundle
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.view.View
 import android.widget.*
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.MapView
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
+import com.mapbox.mapboxsdk.Mapbox
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
+import com.mapbox.mapboxsdk.geometry.LatLng
+import com.mapbox.mapboxsdk.maps.MapView
+import com.mapbox.mapboxsdk.maps.MapboxMap
+import com.mapbox.mapboxsdk.maps.OnMapReadyCallback
+//import com.google.android.gms.maps.CameraUpdateFactory
+//import com.google.android.gms.maps.GoogleMap
+//import com.google.android.gms.maps.MapView
+//import com.google.android.gms.maps.OnMapReadyCallback
+//import com.google.android.gms.maps.model.LatLng
+//import com.google.android.gms.maps.model.Marker
+//import com.google.android.gms.maps.model.MarkerOptions
 import hse.sergeeva.indoornavigation.R
 import hse.sergeeva.indoornavigation.models.Location
 import hse.sergeeva.indoornavigation.models.TowerStatistics
 import hse.sergeeva.indoornavigation.models.locationManagers.LocationManagerType
 import hse.sergeeva.indoornavigation.presenters.LocationScanners
 import hse.sergeeva.indoornavigation.presenters.UiRunner
+import io.mapwize.mapwizeformapbox.AccountManager
+import io.mapwize.mapwizeformapbox.map.MapOptions
+import io.mapwize.mapwizeformapbox.map.MapwizePlugin
+import io.mapwize.mapwizeformapbox.map.MapwizePluginFactory
+import io.mapwize.mapwizeformapbox.map.Marker
+import java.lang.Exception
 
-class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, ILocationActivity, OnMapReadyCallback {
+class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener,
+    ILocationActivity, OnMapReadyCallback {
 
     private lateinit var navigationMethodsSpinner: Spinner
     private var locationScanner: LocationScanners? = null
-    private lateinit var map: GoogleMap
+    private lateinit var map: MapboxMap
     private lateinit var mapView: MapView
+    private lateinit var mapwizePlugin: MapwizePlugin
     private var marker: Marker? = null
     private var allTowers: TextView? = null
     private var cellId: TextView? = null
@@ -36,6 +51,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val box = Mapbox.getInstance(this, "pk.mapwize")
         setContentView(R.layout.activity_main)
 
         navigationMethodsSpinner = findViewById(R.id.naviation_methods)
@@ -45,10 +62,22 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
                 navigationMethodsSpinner.adapter = adapter
             }
 
-        var mapViewBundle: Bundle? = null
-        if (savedInstanceState != null) mapViewBundle = savedInstanceState.getBundle(mapViewBundleKey)
+
         mapView = findViewById(R.id.mapView)
-        mapView.onCreate(mapViewBundle)
+        mapView.onCreate(savedInstanceState)
+
+        val options = MapOptions.Builder()
+            .build()
+
+        mapwizePlugin = MapwizePluginFactory.create(mapView, options)
+        mapwizePlugin.setOnDidLoadListener { mapwizePlugin ->
+            // Mapwize is ready to use
+        }
+
+
+//        var mapViewBundle: Bundle? = null
+//        if (savedInstanceState != null) mapViewBundle = savedInstanceState.getBundle(mapViewBundleKey)
+//        mapView.onCreate(mapViewBundle)
         mapView.getMapAsync(this)
 
         allTowers = findViewById(R.id.allTowers)
@@ -166,33 +195,39 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
         }
     }
 
-    override fun onMapReady(map: GoogleMap?) {
-        this.map = map!!
+    override fun onMapReady(mapboxMap: MapboxMap) {
+        this.map = mapboxMap
+
+        map.setStyle(
+            "https://outdoor.mapwize.io/styles/mapwize/style.json?key="
+                    + AccountManager.getInstance().apiKey
+        )
+
         locationScanner = LocationScanners(applicationContext, this)
         locationScanner!!.scanLocation()
         navigationMethodsSpinner.onItemSelectedListener = this
 
-        val nn = LatLng(56.267762, 43.8770023)
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(nn, 12f))
+        val nn = LatLng(56.268416, 43.877797)
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(nn, 16.0))
     }
 
     override fun updateLocation(location: Location) {
-        val latLng = LatLng(location.latitude, location.longitude)
-
-        if (marker == null) {
-            val markerOptions = MarkerOptions()
-            markerOptions.position(latLng)
-            marker = map.addMarker(markerOptions)
-        } else {
-            marker!!.position = latLng
-        }
+//        val latLng = LatLng(location.latitude, location.longitude)
+//
+//        if (marker == null) {
+//            val markerOptions = MarkerOptions()
+//            markerOptions.position(latLng)
+//            marker = map.addMarker(markerOptions)
+//        } else {
+//            marker!!.position = latLng
+//        }
     }
 
     override fun setMarker(location: Location) {
-        val latLng = LatLng(location.latitude, location.longitude)
-        val markerOptions = MarkerOptions()
-        markerOptions.position(latLng)
-        map.addMarker(markerOptions)
+//        val latLng = LatLng(location.latitude, location.longitude)
+//        val markerOptions = MarkerOptions()
+//        markerOptions.position(latLng)
+//        map.addMarker(markerOptions)
     }
 
     override fun updateData() {
