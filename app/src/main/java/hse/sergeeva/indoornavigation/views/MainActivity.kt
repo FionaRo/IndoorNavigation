@@ -9,22 +9,10 @@ import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.View
 import android.widget.*
-import com.mapbox.mapboxsdk.Mapbox
-import com.mapbox.mapboxsdk.annotations.MarkerOptions
-import com.mapbox.mapboxsdk.camera.CameraPosition
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
 import com.mapbox.mapboxsdk.geometry.LatLng
-import com.mapbox.mapboxsdk.maps.MapView
 import com.mapbox.mapboxsdk.maps.MapboxMap
-import com.mapbox.mapboxsdk.maps.MapboxMapOptions
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback
-//import com.google.android.gms.maps.CameraUpdateFactory
-//import com.google.android.gms.maps.GoogleMap
-//import com.google.android.gms.maps.MapView
-//import com.google.android.gms.maps.OnMapReadyCallback
-//import com.google.android.gms.maps.model.LatLng
-//import com.google.android.gms.maps.model.Marker
-//import com.google.android.gms.maps.model.MarkerOptions
 import hse.sergeeva.indoornavigation.R
 import hse.sergeeva.indoornavigation.models.Location
 import hse.sergeeva.indoornavigation.models.TowerStatistics
@@ -35,26 +23,21 @@ import io.indoorlocation.core.IndoorLocation
 import io.indoorlocation.manual.ManualIndoorLocationProvider
 import io.mapwize.mapwizecomponents.ui.MapwizeFragment
 import io.mapwize.mapwizecomponents.ui.MapwizeFragmentUISettings
-import io.mapwize.mapwizeformapbox.AccountManager
 import io.mapwize.mapwizeformapbox.api.LatLngFloor
 import io.mapwize.mapwizeformapbox.api.MapwizeObject
-import io.mapwize.mapwizeformapbox.api.Place
 import io.mapwize.mapwizeformapbox.map.MapOptions
 import io.mapwize.mapwizeformapbox.map.MapwizePlugin
-import io.mapwize.mapwizeformapbox.map.MapwizePluginFactory
 import io.mapwize.mapwizeformapbox.map.Marker
 import kotlinx.android.synthetic.main.activity_main.*
-import java.lang.Exception
 
-class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener,
-    ILocationActivity, OnMapReadyCallback, MapwizeFragment.OnFragmentInteractionListener {
+class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, ILocationActivity,
+    MapwizeFragment.OnFragmentInteractionListener {
 
     private lateinit var navigationMethodsSpinner: Spinner
     private var locationScanner: LocationScanners? = null
 
     private var mapwizeFragment: MapwizeFragment? = null
     private var map: MapboxMap? = null
-    //private lateinit var mapView: MapView
     private var mapwizePlugin: MapwizePlugin? = null
     private var locationProvider: ManualIndoorLocationProvider? = null
 
@@ -66,38 +49,25 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener,
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
-        //val box = Mapbox.getInstance(this, "pk.mapwize")
-
-        try {
-            setContentView(R.layout.activity_main)
-        } catch (ex: Exception) {
-            Log.d("MainActivity", ex.message)
-        } catch (ex: Error) {
-            Log.d("MainActivity", ex.message)
-        }
-        navigationMethodsSpinner = findViewById(R.id.naviation_methods)
+        navigationMethodsSpinner = findViewById(R.id.navigation_methods)
         ArrayAdapter.createFromResource(this, R.array.indoor_navigation_methods, android.R.layout.simple_spinner_item)
             .also { adapter ->
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 navigationMethodsSpinner.adapter = adapter
             }
 
-
-        // Uncomment and fill place holder to test MapwizeUI on your venue
         val opts = MapOptions.Builder()
-            //.restrictContentToOrganization("YOUR_ORGANIZATION_ID")
-            //.restrictContentToVenue("YOUR_VENUE_ID")
-            //.centerOnVenue("YOUR_VENUE_ID")
-            //.centerOnPlace("YOUR_PLACE_ID")
+            .restrictContentToVenue("5cd6f30c7b40c40016e4e85b")
+            .centerOnVenue("5cd6f30c7b40c40016e4e85b")
             .build()
 
-        // Uncomment and change value to test different settings configuration
-        var uiSettings = MapwizeFragmentUISettings.Builder()
-            //.menuButtonHidden(true)
-            //.followUserButtonHidden(false)
-            //.floorControllerHidden(false)
-            //.compassHidden(true)
+        val uiSettings = MapwizeFragmentUISettings.Builder()
+            .menuButtonHidden(true)
+            .followUserButtonHidden(true)
+            .floorControllerHidden(false)
+            .compassHidden(false)
             .build()
 
         mapwizeFragment = MapwizeFragment.newInstance(opts, uiSettings)
@@ -105,21 +75,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener,
         val ft = fm.beginTransaction()
         ft.add(fragmentContainer.id, mapwizeFragment!!)
         ft.commit()
-
-        //mapView = findViewById(R.id.mapView)
-        //mapView.onCreate(savedInstanceState)
-
-//        val options = MapOptions.Builder()
-//            .centerOnVenue("hse_university")
-//            .floor(1.0)
-//            .build()
-//
-//        mapwizePlugin = MapwizePluginFactory.create(mapView, options)
-
-//        var mapViewBundle: Bundle? = null
-//        if (savedInstanceState != null) mapViewBundle = savedInstanceState.getBundle(mapViewBundleKey)
-//        mapView.onCreate(mapViewBundle)
-//        mapView.getMapAsync(this)
 
         allTowers = findViewById(R.id.allTowers)
         cellId = findViewById(R.id.cellIdTowers)
@@ -131,7 +86,10 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener,
 
     override fun onFragmentReady(mapboxMap: MapboxMap?, mapwizePlugin: MapwizePlugin?) {
         this.map = mapboxMap
+
         this.mapwizePlugin = mapwizePlugin
+        val nn = LatLng(56.268416, 43.877797)
+        map?.moveCamera(CameraUpdateFactory.newLatLngZoom(nn, 16.0))
 
         this.locationProvider = ManualIndoorLocationProvider()
         this.mapwizePlugin?.setLocationProvider(this.locationProvider!!)
@@ -146,6 +104,10 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener,
             )
             this.locationProvider?.setIndoorLocation(indoorLocation)
         }
+
+        locationScanner = LocationScanners(applicationContext, this)
+        locationScanner!!.scanLocation()
+        navigationMethodsSpinner.onItemSelectedListener = this
     }
 
     override fun onMenuButtonClick() {
@@ -161,10 +123,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener,
     }
 
     override fun shouldDisplayInformationButton(mapwizeObject: MapwizeObject?): Boolean {
-        Log.i("Debug", "shouldDisplayInformationButton")
-        when (mapwizeObject) {
-            is Place -> return true
-        }
         return false
     }
 
@@ -185,15 +143,12 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener,
             mapViewBundle = Bundle()
             outState.putBundle(mapViewBundleKey, mapViewBundle)
         }
-
-        //mapView.onSaveInstanceState(mapViewBundle)
     }
 
     override fun onResume() {
         super.onResume()
 
         UiRunner.activity = this
-        //mapView.onResume()
         locationScanner?.scanLocation()
     }
 
@@ -201,13 +156,11 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener,
         super.onStart()
 
         UiRunner.activity = this
-        //mapView.onStart()
         locationScanner?.scanLocation()
     }
 
     override fun onStop() {
         locationScanner?.stopScanning()
-        //mapView.onStop()
         UiRunner.activity = null
 
         super.onStop()
@@ -215,7 +168,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener,
 
     override fun onPause() {
         locationScanner?.stopScanning()
-        //mapView.onPause()
         UiRunner.activity = null
 
         super.onPause()
@@ -223,17 +175,11 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener,
 
     override fun onDestroy() {
         locationScanner?.stopScanning()
-        //mapView.onDestroy()
         UiRunner.activity = null
 
         super.onDestroy()
     }
 
-    override fun onLowMemory() {
-        super.onLowMemory()
-
-        //mapView.onLowMemory()
-    }
 
     private fun checkPermissions() {
         val permission: Array<String> = arrayOf(
@@ -282,22 +228,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener,
             2 -> locationScanner!!.changeLocationManager(LocationManagerType.Beacons)
             3 -> locationScanner!!.changeLocationManager(LocationManagerType.Vlc)
         }
-    }
-
-    override fun onMapReady(mapboxMap: MapboxMap) {
-        this.map = mapboxMap
-
-        map?.setStyle(
-            "https://outdoor.mapwize.io/styles/mapwize/style.json?key="
-                    + AccountManager.getInstance().apiKey
-        )
-
-        locationScanner = LocationScanners(applicationContext, this)
-        locationScanner!!.scanLocation()
-        navigationMethodsSpinner.onItemSelectedListener = this
-
-        val nn = LatLng(56.268416, 43.877797)
-        map?.moveCamera(CameraUpdateFactory.newLatLngZoom(nn, 16.0))
     }
 
     override fun updateLocation(location: Location) {
