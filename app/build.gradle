@@ -36,11 +36,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-maps:16.1.0'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.1'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.1.1'
-    implementation ('io.mapwize.indoormaps:MapwizeForMapbox:2.1.1') {
-        transitive = true
-    }
-    implementation 'com.mapbox.mapboxsdk:mapbox-android-sdk:7.1.2'
-    implementation('com.mapbox.mapboxsdk:mapbox-android-services:2.2.9@aar') {
-        transitive = true
-    }
+    implementation "io.mapwize.indoormaps:MapwizeForMapbox:2.2.2"
+    implementation 'com.github.indoorlocation:manual-indoor-location-provider-android:1.0.0'
+    implementation project(path: ':mapwizeui')
 }
