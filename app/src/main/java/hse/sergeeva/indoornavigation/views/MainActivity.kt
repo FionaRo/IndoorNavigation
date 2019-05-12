@@ -94,17 +94,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
         this.locationProvider = ManualIndoorLocationProvider()
         this.mapwizePlugin?.setLocationProvider(this.locationProvider!!)
 
-        this.mapwizePlugin?.addOnLongClickListener {
-            val indoorLocation = IndoorLocation(
-                "manual_provider",
-                it.latLngFloor.latitude,
-                it.latLngFloor.longitude,
-                it.latLngFloor.floor,
-                System.currentTimeMillis()
-            )
-            this.locationProvider?.setIndoorLocation(indoorLocation)
-        }
-
         locationScanner = LocationScanners(applicationContext, this)
         locationScanner!!.scanLocation()
         navigationMethodsSpinner.onItemSelectedListener = this
@@ -233,11 +222,14 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
     override fun updateLocation(location: Location) {
         val latLng = LatLng(location.latitude, location.longitude)
 
-        if (marker == null) {
-            marker = mapwizePlugin?.addMarker(LatLngFloor(latLng))
-        } else {
-            marker!!.latLngFloor = LatLngFloor(latLng)
-        }
+        val indoorLocation = IndoorLocation(
+            "manual_provider",
+            location.latitude,
+            location.longitude,
+            location.floor.toDouble(),
+            System.currentTimeMillis()
+        )
+        this.locationProvider?.setIndoorLocation(indoorLocation)
     }
 
     override fun setMarker(location: Location) {
