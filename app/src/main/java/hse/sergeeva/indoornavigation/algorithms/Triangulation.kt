@@ -1,5 +1,6 @@
-package hse.sergeeva.indoornavigation.alorithms
+package hse.sergeeva.indoornavigation.algorithms
 
+import hse.sergeeva.indoornavigation.algorithms.kalmanFilter.Coordinates
 import java.lang.Math.pow
 
 class Triangulation {
@@ -17,7 +18,7 @@ class Triangulation {
             point1: LatLngDistance,
             point2: LatLngDistance,
             point3: LatLngDistance
-        ): LatLngDistance {
+        ): LatLng {
 
             //latlng to Cortesian coords
             var cortesianPoint1 = CortesianCoords(point1)
@@ -52,16 +53,16 @@ class Triangulation {
             val triPt2 = cortesianPoint1 add (ex multiply x) add (ey multiply y) add (ez multiply z2)
 
             val resultPoint1 = LatLngDistance(
-                Math.toDegrees(Math.asin(triPt1.z / 6371)),
+                Math.toDegrees(Math.asin(triPt1.z / Coordinates.EARTH_RADIUS)),
                 Math.toDegrees(Math.atan2(triPt1.y, triPt1.x))
             )
 
             val resultPoint2 = LatLngDistance(
-                Math.toDegrees(Math.asin(triPt2.z / 6371)),
+                Math.toDegrees(Math.asin(triPt2.z / Coordinates.EARTH_RADIUS)),
                 Math.toDegrees(Math.atan2(triPt2.y, triPt2.x))
             )
 
-            return LatLngDistance(
+            return LatLng(
                 (resultPoint1.latitude + resultPoint2.latitude) / 2,
                 (resultPoint1.longitude + resultPoint2.longitude) / 2
             )

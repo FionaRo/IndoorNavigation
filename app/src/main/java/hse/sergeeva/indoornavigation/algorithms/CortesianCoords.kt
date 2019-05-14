@@ -1,11 +1,11 @@
-package hse.sergeeva.indoornavigation.alorithms
+package hse.sergeeva.indoornavigation.algorithms
 
+import hse.sergeeva.indoornavigation.algorithms.kalmanFilter.Coordinates
 import java.lang.Math.cos
 import kotlin.math.sin
 
 class CortesianCoords {
 
-    private val earthR = 6371
     var x: Double = 0.0
     var y: Double = 0.0
     var z: Double = 0.0
@@ -17,9 +17,9 @@ class CortesianCoords {
     }
 
     constructor(latlng: LatLngDistance) {
-        x = earthR * cos(Math.toRadians(latlng.latitude)) * cos(Math.toRadians(latlng.longitude))
-        y = earthR * cos(Math.toRadians(latlng.latitude)) * sin(Math.toRadians(latlng.longitude))
-        z = earthR * sin(Math.toRadians(latlng.latitude))
+        x = Coordinates.EARTH_RADIUS * cos(Math.toRadians(latlng.latitude)) * cos(Math.toRadians(latlng.longitude))
+        y = Coordinates.EARTH_RADIUS * cos(Math.toRadians(latlng.latitude)) * sin(Math.toRadians(latlng.longitude))
+        z = Coordinates.EARTH_RADIUS * sin(Math.toRadians(latlng.latitude))
     }
 
     infix fun add(coords: CortesianCoords) = CortesianCoords(x + coords.x, y + coords.y, z + coords.z)

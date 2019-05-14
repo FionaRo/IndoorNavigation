@@ -27,7 +27,6 @@ import io.mapwize.mapwizeformapbox.api.LatLngFloor
 import io.mapwize.mapwizeformapbox.api.MapwizeObject
 import io.mapwize.mapwizeformapbox.map.MapOptions
 import io.mapwize.mapwizeformapbox.map.MapwizePlugin
-import io.mapwize.mapwizeformapbox.map.Marker
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, ILocationActivity,
@@ -41,7 +40,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
     private var mapwizePlugin: MapwizePlugin? = null
     private var locationProvider: ManualIndoorLocationProvider? = null
 
-    private var marker: Marker? = null
     private var allTowers: TextView? = null
     private var cellId: TextView? = null
     private var myLinkov: TextView? = null
