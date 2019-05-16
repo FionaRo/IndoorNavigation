@@ -76,7 +76,7 @@ class SensorLocationDataItem : Comparable<SensorLocationDataItem> {
     }
 
     override fun compareTo(other: SensorLocationDataItem): Int {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return (timestamp - other.timestamp).toInt()
     }
 
 }
