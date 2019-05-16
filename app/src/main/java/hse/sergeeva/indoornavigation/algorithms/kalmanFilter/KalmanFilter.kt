@@ -1,6 +1,6 @@
 package hse.sergeeva.indoornavigation.algorithms.kalmanFilter
 
-class KalmanFilter {
+class KalmanFilter(stateDimension: Int, measureDimension: Int, controlDimension: Int) {
 
     /*these matrices should be provided by user*/
     var F: Matrix //state transition model
@@ -29,11 +29,7 @@ class KalmanFilter {
     var auxSDxSD: Matrix
     var auxSDxMD: Matrix
 
-    constructor(
-        stateDimension: Int,
-        measureDimension: Int,
-        controlDimension: Int
-    ) {
+    init {
         this.F = Matrix(stateDimension, stateDimension)
         this.H = Matrix(measureDimension, stateDimension)
         this.Q = Matrix(stateDimension, stateDimension)

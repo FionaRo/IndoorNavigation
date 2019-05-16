@@ -10,6 +10,11 @@ import android.bluetooth.le.ScanSettings
 import java.util.*
 import android.support.annotation.NonNull
 import android.util.Log
+import hse.sergeeva.indoornavigation.algorithms.LatLngDistance
+import hse.sergeeva.indoornavigation.algorithms.Triangulation
+import hse.sergeeva.indoornavigation.algorithms.kalmanFilter.Utils
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlin.experimental.and
 import kotlin.math.min
 
@@ -24,7 +29,19 @@ class BeaconsLocationManager(
     private val bluetoothAdapter = bluetoothManager.adapter
     private val bluetoothScanner = bluetoothAdapter.bluetoothLeScanner
     private var scanning = false
-    private val devices = hashMapOf<String, String?>()
+    private val devices = mutableListOf<Pair<Pair<Int, Int>, Double>>()
+    private val beaconLocations = hashMapOf(
+        Pair(2, 2021) to Location(56.268159, 43.876984, 2),
+        Pair(2, 2022) to Location(56.268185, 43.877077, 2),
+        Pair(2, 2023) to Location(56.268102, 43.877048, 2),
+        Pair(2, 2024) to Location(56.268136, 43.877143, 2)
+    )
+
+    init {
+        GlobalScope.launch {
+            worker()
+        }
+    }
 
     @SuppressLint("MissingPermission")
     override fun getLocation(): Boolean {
@@ -77,18 +94,48 @@ class BeaconsLocationManager(
                 val minor =
                     byteArrayToInteger(Arrays.copyOfRange(scanRecord, startByte + 22, startByte + 24))
 
-                Log.d("Beacon", "$major:$minor")
-
+                devices += Pair(
+                    Pair(major, minor),
+                    Triangulation.rssiToDistance(result.rssi)
+                )
+                if (devices.size > 3)
+                    devices.removeAt(0)
             }
         }
+    }
 
-        if (!devices.containsKey(device.address))
-            devices[device.address] = device.name
+    private fun worker() {
+        while (scanning) {
+            Thread.sleep(500)
+
+            if (devices.size < 3) continue
+
+            val d1 = devices[0]
+            val d2 = devices[1]
+            val d3 = devices[2]
+
+            val p1 = beaconLocations[d1.first]
+            val p2 = beaconLocations[d2.first]
+            val p3 = beaconLocations[d3.first]
+
+            if (p1 == null || p2 == null || p3 == null) continue
+
+            val lld1 = LatLngDistance(p1.latitude, p1.longitude, d1.second)
+            val lld2 = LatLngDistance(p2.latitude, p2.longitude, d2.second)
+            val lld3 = LatLngDistance(p3.latitude, p3.longitude, d3.second)
+
+            val location = Triangulation.triangulateLocation(lld1, lld2, lld3)
+
+            if (location.latitude == 0.0 || location.longitude == 0.0)
+                locationReceiver(false, null)
+            else
+                locationReceiver(true, Location(location.latitude, location.longitude, d1.first.first))
+        }
     }
 
     private val HEX_ARRAY = "0123456789ABCDEF".toCharArray()
 
-    fun bytesToUuid(bytes: ByteArray): UUID {
+    private fun bytesToUuid(bytes: ByteArray): UUID {
         val hexChars = CharArray(bytes.size * 2)
         for (j in bytes.indices) {
             val v = bytes[j].toInt() and 0xFF
@@ -107,7 +154,7 @@ class BeaconsLocationManager(
         )
     }
 
-    fun byteArrayToInteger(byteArray: ByteArray): Int {
+    private fun byteArrayToInteger(byteArray: ByteArray): Int {
         return (byteArray[0].toInt() and 0xff) * 0x100 + (byteArray[1].toInt() and 0xff)
     }
 
