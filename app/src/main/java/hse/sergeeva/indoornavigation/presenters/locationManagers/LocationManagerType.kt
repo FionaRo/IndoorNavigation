@@ -1,4 +1,4 @@
-package hse.sergeeva.indoornavigation.models.locationManagers
+package hse.sergeeva.indoornavigation.presenters.locationManagers
 
 enum class LocationManagerType {
     WiFi,

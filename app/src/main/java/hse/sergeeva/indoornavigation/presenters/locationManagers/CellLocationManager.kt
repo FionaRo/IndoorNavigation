@@ -1,4 +1,4 @@
-package hse.sergeeva.indoornavigation.models.locationManagers
+package hse.sergeeva.indoornavigation.presenters.locationManagers
 
 import android.annotation.SuppressLint
 import android.content.Context

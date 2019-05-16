@@ -68,7 +68,9 @@ let i = 0
 
 function setInitState() {
     if (i == code.length)
-        i = 0;
+        {
+            console.log("END")
+            i = 0;}
 
     if (currentState == code[i]) {
         if (code[i] === 0) {
@@ -86,7 +88,8 @@ function setInitState() {
 
 function setState() {
     if (i == code.length)
-        i = 0;
+        {console.log("END")
+            i = 0;}
 
     changeBackground(code[i]);
     setTimeout(setInitState, tact / 2);

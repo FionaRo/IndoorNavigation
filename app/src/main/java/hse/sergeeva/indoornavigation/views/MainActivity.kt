@@ -12,11 +12,10 @@ import android.widget.*
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
 import com.mapbox.mapboxsdk.geometry.LatLng
 import com.mapbox.mapboxsdk.maps.MapboxMap
-import com.mapbox.mapboxsdk.maps.OnMapReadyCallback
 import hse.sergeeva.indoornavigation.R
 import hse.sergeeva.indoornavigation.models.Location
 import hse.sergeeva.indoornavigation.models.TowerStatistics
-import hse.sergeeva.indoornavigation.models.locationManagers.LocationManagerType
+import hse.sergeeva.indoornavigation.presenters.locationManagers.LocationManagerType
 import hse.sergeeva.indoornavigation.presenters.LocationScanners
 import hse.sergeeva.indoornavigation.presenters.UiRunner
 import io.indoorlocation.core.IndoorLocation
@@ -180,7 +179,8 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener, IL
             Manifest.permission.BLUETOOTH,
             Manifest.permission.BLUETOOTH_ADMIN,
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.CAMERA
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO
         )
 
         if (!hasPermissions(permission)) {

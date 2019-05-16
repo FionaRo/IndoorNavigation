@@ -1,11 +1,10 @@
 package hse.sergeeva.indoornavigation.presenters
 
 import android.content.Context
-import android.os.AsyncTask.execute
 import android.util.Log
 import hse.sergeeva.indoornavigation.algorithms.kalmanFilter.KalmanLocationService
 import hse.sergeeva.indoornavigation.models.Location
-import hse.sergeeva.indoornavigation.models.locationManagers.*
+import hse.sergeeva.indoornavigation.presenters.locationManagers.*
 import hse.sergeeva.indoornavigation.views.ILocationActivity
 import kotlinx.coroutines.*
 import java.lang.Exception

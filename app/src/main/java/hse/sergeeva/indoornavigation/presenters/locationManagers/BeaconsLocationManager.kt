@@ -1,4 +1,4 @@
-package hse.sergeeva.indoornavigation.models.locationManagers
+package hse.sergeeva.indoornavigation.presenters.locationManagers
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothManager
@@ -8,15 +8,10 @@ import android.content.Context
 import hse.sergeeva.indoornavigation.models.Location
 import android.bluetooth.le.ScanSettings
 import java.util.*
-import android.support.annotation.NonNull
-import android.util.Log
 import hse.sergeeva.indoornavigation.algorithms.LatLngDistance
 import hse.sergeeva.indoornavigation.algorithms.Triangulation
-import hse.sergeeva.indoornavigation.algorithms.kalmanFilter.Utils
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlin.experimental.and
-import kotlin.math.min
 
 
 class BeaconsLocationManager(

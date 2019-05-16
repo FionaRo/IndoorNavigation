@@ -1,4 +1,4 @@
-package hse.sergeeva.indoornavigation.models.locationManagers
+package hse.sergeeva.indoornavigation.presenters.locationManagers
 
 import android.content.BroadcastReceiver
 import android.content.Context
