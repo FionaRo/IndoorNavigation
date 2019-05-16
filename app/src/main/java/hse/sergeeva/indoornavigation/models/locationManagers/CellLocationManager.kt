@@ -30,7 +30,6 @@ class CellLocationManager(
     @SuppressLint("MissingPermission")
     override fun getLocation(): Boolean {
         val allCellInfo = telephonyManager.allCellInfo
-        telephonyManager.neighboringCellInfo
         if (allCellInfo.size == 0) {
             Log.d("CellLocationManager", "Cannot get cell info")
             return false
@@ -290,7 +289,8 @@ class CellLocationManager(
         val currentLocation = Location(
             latitude = googleLocation.location.lat,
             longitude = googleLocation.location.lng,
-            accuracy = googleLocation.accuracy
+            accuracy = googleLocation.accuracy,
+            floor = 2
         )
         locationReceiver(true, currentLocation)
     }
@@ -311,7 +311,8 @@ class CellLocationManager(
             val currentLocation = Location(
                 latitude = cellIdLocation.lat,
                 longitude = cellIdLocation.lon,
-                accuracy = cellIdLocation.accuracy
+                accuracy = cellIdLocation.accuracy,
+                floor = 2
             )
             locationReceiver(true, currentLocation)
         }
@@ -323,7 +324,8 @@ class CellLocationManager(
         val currentLocation = Location(
             latitude = yandexLocation.position.latitude,
             longitude = yandexLocation.position.longitude,
-            accuracy = yandexLocation.position.precision.toInt()
+            accuracy = yandexLocation.position.precision.toInt(),
+            floor = 2
         )
         locationReceiver(true, currentLocation)
     }

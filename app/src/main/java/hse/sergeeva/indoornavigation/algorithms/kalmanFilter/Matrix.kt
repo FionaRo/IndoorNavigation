@@ -1,18 +1,12 @@
 package hse.sergeeva.indoornavigation.algorithms.kalmanFilter
 
-class Matrix {
-    private var rows: Int = 0
-    private var cols: Int = 0
-    var data: Array<DoubleArray>
-
-    constructor(rows: Int, cols: Int) {
-        this.rows = rows
-        this.cols = cols
-        data = Array(rows) { DoubleArray(cols) }
-    }
+class Matrix(private var rows: Int, private var cols: Int) {
+    var data: Array<DoubleArray> = Array(rows) { DoubleArray(cols) }
 
     fun setData(args: DoubleArray) {
-        assert(args.size == rows * cols)
+        if (args.size != rows * cols) {
+            throw AssertionError("Assertion failed")
+        }
         for (r in 0 until rows) {
             for (c in 0 until cols) {
                 data[r][c] = args[r * cols + c]
@@ -21,7 +15,9 @@ class Matrix {
     }
 
     fun setData(args: FloatArray) {
-        assert(args.size == rows * cols)
+        if (args.size != rows * cols) {
+            throw AssertionError("Assertion failed")
+        }
         for (r in 0 until rows) {
             for (c in 0 until cols) {
                 data[r][c] = args[r * cols + c].toDouble()
@@ -39,7 +35,9 @@ class Matrix {
     }
 
     fun setIdentity() {
-        assert(rows == cols)
+        if (rows != cols) {
+            throw AssertionError("Assertion failed")
+        }
         setIdentityDiag()
     }
 
@@ -61,29 +59,41 @@ class Matrix {
     }
 
     private fun swapRows(r1: Int, r2: Int) {
-        assert(r1 != r2)
+        if (r1 == r2) {
+            throw AssertionError("Assertion failed")
+        }
         val tmp = data[r1]
         data[r1] = data[r2]
         data[r2] = tmp
     }
 
     private fun scaleRow(r: Int, scalar: Double) {
-        assert(r < rows)
+        if (r >= rows) {
+            throw AssertionError("Assertion failed")
+        }
         for (c in 0 until cols)
             data[r][c] *= scalar
     }
 
     internal fun shearRow(r1: Int, r2: Int, scalar: Double) {
-        assert(r1 != r2)
-        assert(r1 < rows && r2 < rows)
+        if (r1 == r2) {
+            throw AssertionError("Assertion failed")
+        }
+        if (!(r1 < rows && r2 < rows)) {
+            throw AssertionError("Assertion failed")
+        }
         for (c in 0 until cols)
             data[r1][c] += data[r2][c] * scalar
     }
 
     companion object {
         fun matrixAdd(ma: Matrix, mb: Matrix, mc: Matrix) {
-            assert(ma.cols == mb.cols && mb.cols == mc.cols)
-            assert(ma.rows == mb.rows && mb.rows == mc.rows)
+            if (!(ma.cols == mb.cols && mb.cols == mc.cols)) {
+                throw AssertionError("Assertion failed")
+            }
+            if (!(ma.rows == mb.rows && mb.rows == mc.rows)) {
+                throw AssertionError("Assertion failed")
+            }
 
             for (r in 0 until ma.rows) {
                 for (c in 0 until ma.cols) {
@@ -93,8 +103,12 @@ class Matrix {
         }
 
         fun matrixSubtract(ma: Matrix, mb: Matrix, mc: Matrix) {
-            assert(ma.cols == mb.cols && mb.cols == mc.cols)
-            assert(ma.rows == mb.rows && mb.rows == mc.rows)
+            if (!(ma.cols == mb.cols && mb.cols == mc.cols)) {
+                throw AssertionError("Assertion failed")
+            }
+            if (!(ma.rows == mb.rows && mb.rows == mc.rows)) {
+                throw AssertionError("Assertion failed")
+            }
 
             for (r in 0 until ma.rows) {
                 for (c in 0 until ma.cols) {
@@ -104,9 +118,15 @@ class Matrix {
         }
 
         fun matrixMultiply(ma: Matrix, mb: Matrix, mc: Matrix) {
-            assert(ma.cols == mb.rows)
-            assert(ma.rows == mc.rows)
-            assert(mb.cols == mc.cols)
+            if (ma.cols != mb.rows) {
+                throw AssertionError("Assertion failed")
+            }
+            if (ma.rows != mc.rows) {
+                throw AssertionError("Assertion failed")
+            }
+            if (mb.cols != mc.cols) {
+                throw AssertionError("Assertion failed")
+            }
 
             for (r in 0 until mc.rows) {
                 for (c in 0 until mc.cols) {
@@ -118,9 +138,15 @@ class Matrix {
         }
 
         fun matrixMultiplyByTranspose(ma: Matrix, mb: Matrix, mc: Matrix) {
-            assert(ma.cols == mb.cols)
-            assert(ma.rows == mc.rows)
-            assert(mb.rows == mc.cols)
+            if (ma.cols != mb.cols) {
+                throw AssertionError("Assertion failed")
+            }
+            if (ma.rows != mc.rows) {
+                throw AssertionError("Assertion failed")
+            }
+            if (mb.rows != mc.cols) {
+                throw AssertionError("Assertion failed")
+            }
             for (r in 0 until mc.rows) {
                 for (c in 0 until mc.cols) {
                     mc.data[r][c] = 0.0
@@ -131,8 +157,12 @@ class Matrix {
         }
 
         fun matrixTranspose(mtxin: Matrix, mtxout: Matrix) {
-            assert(mtxin.rows == mtxout.cols)
-            assert(mtxin.cols == mtxout.rows)
+            if (mtxin.rows != mtxout.cols) {
+                throw AssertionError("Assertion failed")
+            }
+            if (mtxin.cols != mtxout.rows) {
+                throw AssertionError("Assertion failed")
+            }
             for (r in 0 until mtxin.rows) {
                 for (c in 0 until mtxin.cols) {
                     mtxout.data[c][r] = mtxin.data[r][c]
@@ -154,7 +184,9 @@ class Matrix {
         }
 
         fun matrixCopy(mSrc: Matrix, mDst: Matrix) {
-            assert(mSrc.rows == mDst.rows && mSrc.cols == mDst.cols)
+            if (!(mSrc.rows == mDst.rows && mSrc.cols == mDst.cols)) {
+                throw AssertionError("Assertion failed")
+            }
             for (r in 0 until mSrc.rows) {
                 for (c in 0 until mSrc.cols) {
                     mDst.data[r][c] = mSrc.data[r][c]
@@ -163,9 +195,15 @@ class Matrix {
         }
 
         fun matrixDestructiveInvert(mtxin: Matrix, mtxout: Matrix): Boolean {
-            assert(mtxin.cols == mtxin.rows)
-            assert(mtxout.cols == mtxin.cols)
-            assert(mtxout.rows == mtxin.rows)
+            if (mtxin.cols != mtxin.rows) {
+                throw AssertionError("Assertion failed")
+            }
+            if (mtxout.cols != mtxin.cols) {
+                throw AssertionError("Assertion failed")
+            }
+            if (mtxout.rows != mtxin.rows) {
+                throw AssertionError("Assertion failed")
+            }
 
             var ri: Int
             var scalar: Double

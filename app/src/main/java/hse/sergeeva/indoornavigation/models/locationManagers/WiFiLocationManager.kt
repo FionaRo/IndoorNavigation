@@ -24,7 +24,7 @@ class WiFiLocationManager(
     private var wifiManager: WifiManager =
         context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
     private val googleApi: GoogleApi = GoogleApi(context)
-    private var mills: Long = System.currentTimeMillis()
+    private var mills: Long = 0
     private var scanStopped = false
     private val openCellIdApi = OpenCellIdApi(context)
     private val yandexApi = YandexApi(context)
@@ -151,7 +151,8 @@ class WiFiLocationManager(
             val currentLocation = Location(
                 latitude = cellIdLocation.lat,
                 longitude = cellIdLocation.lon,
-                accuracy = cellIdLocation.accuracy
+                accuracy = cellIdLocation.accuracy,
+                floor = 2
             )
             locationReceiver(true, currentLocation)
         }

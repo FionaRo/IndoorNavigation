@@ -3,6 +3,7 @@ package hse.sergeeva.indoornavigation.presenters
 import android.content.Context
 import android.os.AsyncTask.execute
 import android.util.Log
+import hse.sergeeva.indoornavigation.algorithms.kalmanFilter.KalmanLocationService
 import hse.sergeeva.indoornavigation.models.Location
 import hse.sergeeva.indoornavigation.models.locationManagers.*
 import hse.sergeeva.indoornavigation.views.ILocationActivity
@@ -13,6 +14,7 @@ class LocationScanners(private val context: Context, private val activity: ILoca
 
     private var locationManagerType: LocationManagerType = LocationManagerType.WiFi
     private var locationManager: ILocationManager = WiFiLocationManager(context, ::onLocationReceiver)
+    private var kalmanFilter: KalmanLocationService = KalmanLocationService(context, ::onKalmanLocationReceiver)
     private var _isStopped = false
     private var _isRunning = false
 
@@ -33,6 +35,7 @@ class LocationScanners(private val context: Context, private val activity: ILoca
         if (_isRunning) return
         _isStopped = false
         _isRunning = true
+        kalmanFilter.start()
 
         GlobalScope.launch {
             while (!_isStopped) {
@@ -54,12 +57,19 @@ class LocationScanners(private val context: Context, private val activity: ILoca
         _isRunning = false
         _isStopped = true
         locationManager.stopScan()
+        kalmanFilter.stop()
     }
+
+    var i = 0
 
     private fun onLocationReceiver(success: Boolean, location: Location?) {
         if (!success)
             activity.showMessage("Cannot get location")
-        else
-            activity.updateLocation(location!!)
+        else if (location != null)
+            kalmanFilter.onLocationChanged(location)
+    }
+
+    private fun onKalmanLocationReceiver(location: android.location.Location) {
+        activity.updateLocation(Location(location.latitude, location.longitude, 2, location.accuracy.toInt()))
     }
 }

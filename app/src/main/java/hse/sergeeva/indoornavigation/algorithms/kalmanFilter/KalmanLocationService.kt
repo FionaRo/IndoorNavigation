@@ -10,7 +10,7 @@ import kotlinx.coroutines.launch
 import java.lang.Exception
 import java.util.concurrent.PriorityBlockingQueue
 
-class KalmanLocationService : SensorEventListener {
+class KalmanLocationService(context: Context, val onKalmanLocation: (Location) -> Unit) : SensorEventListener {
 
     enum class ServiceStatus private constructor(value: Int) {
         PERMISSION_DENIED(0),
@@ -49,7 +49,7 @@ class KalmanLocationService : SensorEventListener {
     private var m_sensorsEnabled: Boolean = false
     private var task: Job? = null
 
-    constructor(context: Context) {
+    init {
         m_sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         for (st in sensorTypes) {
             val sensor = m_sensorManager.getDefaultSensor(st)
@@ -221,6 +221,7 @@ class KalmanLocationService : SensorEventListener {
         m_lastLocation = location
         m_lastLocationAccuracy = location.accuracy
 
+        onKalmanLocation(location)
     }
 
     private fun handlePredict(locationItem: SensorLocationDataItem) {
