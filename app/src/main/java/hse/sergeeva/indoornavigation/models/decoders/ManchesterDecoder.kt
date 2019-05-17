@@ -7,8 +7,6 @@ import kotlin.math.min
 class ManchesterDecoder {
     companion object {
 
-        private const val messageLen = 12
-
         fun decode(bytes: List<Int>): List<Int> {
 
             val minError = 10000
@@ -18,14 +16,6 @@ class ManchesterDecoder {
                 val check = check(bytes, i)
                 if (check.first == 0) return check.second
                 if (minError > check.first) result = check.second
-
-//                val check12 = check12(bytes, i)
-//                if (check12.first) return check12.second
-//                if (check12.second.isNotEmpty()) result.add(check12.second)
-//
-//                val check21 = check21(bytes, i)
-//                if (check21.first) return check21.second
-//                if (check21.second.isNotEmpty()) result.add(check21.second)
             }
 
             return result
@@ -67,7 +57,6 @@ class ManchesterDecoder {
 
             return compressedBytes
         }
-
 
         private fun check(bytes: List<Int>, start: Int): Pair<Int, List<Int>> {
             val originBytes = arrayListOf<Int>()
@@ -130,7 +119,7 @@ class ManchesterDecoder {
 
         }
 
-        fun findPreamble(bytes: ArrayList<Int>): Int {
+        fun findPreamble(bytes: List<Int>): Int {
             val preamble = arrayListOf(1, 0, 1, 0, 1, 0, 1, 0)
             for (i in 0 until bytes.size) {
                 if (i + preamble.size - 1 > bytes.size) return -1

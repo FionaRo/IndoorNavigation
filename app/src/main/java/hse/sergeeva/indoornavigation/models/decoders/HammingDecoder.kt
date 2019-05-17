@@ -7,7 +7,7 @@ import kotlin.math.log2
 class HammingDecoder {
 
     companion object {
-        private fun getMatrix(width: Int): ArrayList<ByteArray> {
+        private fun getMatrix(width: Int): List<ByteArray> {
             val matrix = arrayListOf<ByteArray>()
 
             val height = ceil(log2(width.toDouble())).toInt()
@@ -35,7 +35,7 @@ class HammingDecoder {
             return newMatrix
         }
 
-        private fun binaryToInt(binary: ArrayList<Int>): Int {
+        private fun binaryToInt(binary: List<Int>): Int {
             var code = 0
             for (i in 0 until binary.size) {
                 code += binary[i] * (1 shl (binary.size - i - 1))
@@ -43,7 +43,7 @@ class HammingDecoder {
             return code
         }
 
-        private fun checkDecode(binary: ArrayList<Int>, matrix: ArrayList<ByteArray>): ArrayList<Int> {
+        private fun checkDecode(binary: List<Int>, matrix: List<ByteArray>): List<Int> {
             val check = arrayListOf<Int>()
             var decodeOk = true
             for (i in 0 until matrix.size) {
@@ -61,34 +61,34 @@ class HammingDecoder {
             return arrayListOf()
         }
 
-        fun decode(binary: ArrayList<Int>): Pair<Boolean, Int> {
-            val matrix = getMatrix(binary.size)
+        fun decode(binary: List<Int>): Pair<Boolean, Int> {
+            val binaryCopy = binary.toMutableList()
+            val matrix = getMatrix(binaryCopy.size)
+            val error = checkDecode(binaryCopy, matrix)
 
-            val error = checkDecode(binary, matrix)
-
-            if (error.size != 0) {
+            if (error.isNotEmpty()) {
                 val index = binaryToInt(error)
-                if (binary[index] == 0)
-                    binary[index] = 1
+                if (binaryCopy[index] == 0)
+                    binaryCopy[index] = 1
                 else
-                    binary[index] = 0
-                val error1 = checkDecode(binary, matrix)
-                if (error1.size != 0)
+                    binaryCopy[index] = 0
+                val error1 = checkDecode(binaryCopy, matrix)
+                if (error1.isNotEmpty())
                     return Pair(false, -1)
             }
 
             val binaryCode = arrayListOf<Int>()
             var twoPow = 1
 
-            for (i in 0 until binary.size) {
+            for (i in 0 until binaryCopy.size) {
                 if (i + 1 == twoPow) {
                     twoPow *= 2
                     continue
                 }
-                binaryCode.add(binary[i])
+                binaryCode.add(binaryCopy[i])
             }
 
-            return Pair(error.size == 0, binaryToInt(binaryCode))
+            return Pair(error.isEmpty(), binaryToInt(binaryCode))
         }
     }
 }

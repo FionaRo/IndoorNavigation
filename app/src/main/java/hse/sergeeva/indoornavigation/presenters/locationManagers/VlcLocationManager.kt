@@ -5,7 +5,6 @@ import android.content.Context
 import android.hardware.camera2.*
 import android.media.CamcorderProfile
 import android.media.MediaRecorder
-import android.os.Build
 import android.os.Environment
 import android.os.Handler
 import android.os.HandlerThread
@@ -18,11 +17,15 @@ import java.io.File
 import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
-import android.media.MediaMetadataRetriever
+import hse.sergeeva.indoornavigation.models.Location
 import hse.sergeeva.indoornavigation.models.camera.ImageAnalyzer
+import hse.sergeeva.indoornavigation.models.decoders.HammingDecoder
 
 
-class VlcLocationManager(private val context: Context) : ILocationManager {
+class VlcLocationManager(
+    private val context: Context,
+    private val locationReceiver: (success: Boolean, location: Location?) -> Unit
+) : ILocationManager {
 
     private val mediaRecorder = MediaRecorder()
     private var cameraDevice: CameraDevice? = null
@@ -34,6 +37,13 @@ class VlcLocationManager(private val context: Context) : ILocationManager {
     private var lastFile: File? = null
     private var scanStopped: Boolean = false
     private val imageAnalyzer: ImageAnalyzer = ImageAnalyzer()
+    private val vlcLocations = hashMapOf(
+        2 to Location(56.268159, 43.876984, 2),
+        4 to Location(56.268185, 43.877077, 2),
+        8 to Location(56.268102, 43.877048, 2),
+        16 to Location(56.268136, 43.877143, 2)
+    )
+
 
     private val stateCallback = object : CameraDevice.StateCallback() {
 
@@ -79,7 +89,6 @@ class VlcLocationManager(private val context: Context) : ILocationManager {
             }
         }
     }
-
 
     @SuppressLint("MissingPermission")
     private fun openCamera() {
@@ -189,13 +198,29 @@ class VlcLocationManager(private val context: Context) : ILocationManager {
     }
 
     override fun getLocation(): Boolean {
-//        if (imageAnalyzer.message.size < 20) return true
-//
-//        val msg = imageAnalyzer.message.toList()
-//        val code = ManchesterDecoder.decode(msg)
-//        if (code == -1) return false
-//
-//        imageAnalyzer.message.clear()
+        if (imageAnalyzer.message.size < 20) return true
+
+        val msg = imageAnalyzer.message.toList()
+        val preambleEnd = ManchesterDecoder.findPreamble(msg)
+        if (preambleEnd == -1) {
+            locationReceiver(false, null)
+            return true
+        }
+
+        val id = HammingDecoder.decode(msg.subList(preambleEnd, preambleEnd + 12))
+
+        if (!id.first)
+            Log.d("VLCLocationManager", "Error in Hamming decoding")
+
+        if (!vlcLocations.containsKey(id.second)) {
+            locationReceiver(false, null)
+            return true
+        }
+        val messageSize = imageAnalyzer.message.size
+        imageAnalyzer.message = imageAnalyzer.message.subList(preambleEnd + 12, messageSize)
+
+        locationReceiver(true, vlcLocations[id.second])
+
         return true
     }
 

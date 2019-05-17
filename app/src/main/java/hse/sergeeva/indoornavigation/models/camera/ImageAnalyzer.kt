@@ -16,7 +16,7 @@ import java.util.*
 
 
 class ImageAnalyzer {
-    val message = mutableListOf<Int>()
+    var message = mutableListOf<Int>()
     private val manchesterMessage = mutableListOf<Int>()
     private val queue = mutableListOf<String>()
     private var stopped: Boolean = false
@@ -55,10 +55,9 @@ class ImageAnalyzer {
             for (time in (300 * 1000).toLong() until milliseconds * 1000 step (300 * 1000).toLong()) {
                 val image = retriever.getFrameAtTime(time, MediaMetadataRetriever.OPTION_CLOSEST)
                 analyzeImage(image)
-                //saveImage(image, "${time/(1000)}-${manchesterMessage.last()}.png")
             }
 
-            message += ManchesterDecoder.decode(manchesterMessage)
+            message.addAll(message.size, ManchesterDecoder.decode(manchesterMessage))
             manchesterMessage.clear()
         } catch (ex: Exception) {
             Log.e("VLCLocationManager", "Error in analyze")
@@ -69,8 +68,6 @@ class ImageAnalyzer {
 
     private fun analyzeImage(bitmapImage: Bitmap) {
         try {
-            //saveImage(bitmapImage, SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date()) + ".png")
-
             var meanRed: Long = 0
             var meanGreen: Long = 0
             var meanBlue: Long = 0

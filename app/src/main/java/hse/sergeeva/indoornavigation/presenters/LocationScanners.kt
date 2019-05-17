@@ -26,7 +26,7 @@ class LocationScanners(private val context: Context, private val activity: ILoca
             LocationManagerType.WiFi -> locationManager = WiFiLocationManager(context, ::onLocationReceiver)
             LocationManagerType.CellId -> locationManager = CellLocationManager(context, ::onLocationReceiver)
             LocationManagerType.Beacons -> locationManager = BeaconsLocationManager(context, ::onLocationReceiver)
-            LocationManagerType.Vlc -> locationManager = VlcLocationManager(context)
+            LocationManagerType.Vlc -> locationManager = VlcLocationManager(context, ::onLocationReceiver)
         }
     }
 
@@ -58,8 +58,6 @@ class LocationScanners(private val context: Context, private val activity: ILoca
         locationManager.stopScan()
         kalmanFilter.stop()
     }
-
-    var i = 0
 
     private fun onLocationReceiver(success: Boolean, location: Location?) {
         if (!success)

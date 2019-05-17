@@ -59,9 +59,7 @@ class BeaconsLocationManager(
     }
 
     override fun onScanResult(callbackType: Int, result: ScanResult?) {
-        val device = result!!.device
-
-        if (result.scanRecord != null) {
+        if (result?.scanRecord != null) {
             val scanRecord = result.scanRecord.bytes
 
             var startByte = 2
@@ -89,10 +87,13 @@ class BeaconsLocationManager(
                 val minor =
                     byteArrayToInteger(Arrays.copyOfRange(scanRecord, startByte + 22, startByte + 24))
 
-                devices += Pair(
-                    Pair(major, minor),
-                    Triangulation.rssiToDistance(result.rssi)
-                )
+                val pair = Pair(major, minor)
+                if (beaconLocations.containsKey(pair)) {
+                    devices += Pair(
+                        pair,
+                        Triangulation.rssiToDistance(result.rssi))
+                }
+
                 if (devices.size > 3)
                     devices.removeAt(0)
             }
