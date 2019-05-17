@@ -1,6 +1,7 @@
 package hse.sergeeva.indoornavigation.models.decoders
 
 import java.lang.Math.max
+import kotlin.experimental.and
 import kotlin.math.min
 
 class ManchesterDecoder {
@@ -8,58 +9,26 @@ class ManchesterDecoder {
 
         private const val messageLen = 12
 
-        fun decode(bytes: List<Int>): Int {
+        fun decode(bytes: List<Int>): List<Int> {
 
-            /*var result = mutableListOf<Int>()
+            val minError = 10000
+            var result = listOf<Int>()
 
             for (i in 0..2) {
-                val check12 = check12(bytes, i)
-                if (check12.first) return check12.second
-                if (check12.second != -1) result.add(check12.second)
+                val check = check(bytes, i)
+                if (check.first == 0) return check.second
+                if (minError > check.first) result = check.second
 
-                val check21 = check21(bytes, i)
-                if (check21.first) return check21.second
-                if (check21.second != -1) result.add(check21.second)
-            }*/
-
-            val result = compress(bytes)
-            if (result.size < 40) return -1
-            val message = arrayListOf<Int>()
-
-            for (i in 0 until result.size - 1 step 2) {
-                if (bytes[i] < bytes[i + 1])
-                    message.add(1)
-                else
-                    message.add(0)
+//                val check12 = check12(bytes, i)
+//                if (check12.first) return check12.second
+//                if (check12.second.isNotEmpty()) result.add(check12.second)
+//
+//                val check21 = check21(bytes, i)
+//                if (check21.first) return check21.second
+//                if (check21.second.isNotEmpty()) result.add(check21.second)
             }
 
-            val preambleEnd = findPreamble(message)
-            if (preambleEnd == -1 || preambleEnd + messageLen > message.size) return -1
-
-            val messageBytes = arrayListOf<Int>()
-            for (i in preambleEnd until preambleEnd + messageLen) {
-                messageBytes.add(message[i])
-            }
-
-            return HammingDecoder.decode(messageBytes).second
-
-            /*val hashMap = hashMapOf<Int, Int>()
-            for (el in result) {
-                if (!hashMap.containsKey(el))
-                    hashMap[el] = 0
-                hashMap[el]?.plus(1)
-            }
-
-            var maxCount = 0
-            var maxElement = 0
-            for (el in hashMap) {
-                if (el.value > maxCount) {
-                    maxCount = el.value
-                    maxElement = el.key
-                }
-            }
-
-            return maxElement*/
+            return result
         }
 
         private fun compress(bytes: List<Int>): List<Int> {
@@ -99,12 +68,40 @@ class ManchesterDecoder {
             return compressedBytes
         }
 
-        private fun check12(bytes: List<Int>, start: Int): Pair<Boolean, Int> {
+
+        private fun check(bytes: List<Int>, start: Int): Pair<Int, List<Int>> {
+            val originBytes = arrayListOf<Int>()
+            var errors = 0
+
+            for (i in start until bytes.size - 2 step 3) {
+
+                if (bytes[i] == bytes[i + 1] && bytes[i + 1] != bytes[i + 2])
+                    originBytes.add(bytes[i + 2])
+                else if (bytes[i] != bytes[i + 1] && bytes[i + 1] == bytes[i + 2])
+                    originBytes.add(bytes[i + 2])
+                else {
+                    errors++
+                    if (bytes[i + 1] == bytes[i + 2])
+                        originBytes.add(bytes[i + 2])
+                    else if (i != 0 && bytes[i - 1] == bytes[i]) {
+                        if (bytes[i] == 1)
+                            originBytes.add(0)
+                        else
+                            originBytes.add(1)
+                    } else
+                        originBytes.add(bytes[i])
+                }
+            }
+
+            return Pair(errors, originBytes)
+        }
+
+        private fun check12(bytes: List<Int>, start: Int): Pair<Boolean, List<Int>> {
             val originBytes = arrayListOf<Int>()
 
             for (i in start until bytes.size - 2 step 3) {
                 if (bytes[i] == bytes[i + 1] || bytes[i + 1] != bytes[i + 2])
-                    return Pair(false, -1)
+                    return Pair(false, originBytes)
 
                 if (bytes[i] > bytes[i + 1])
                     originBytes.add(0)
@@ -112,43 +109,28 @@ class ManchesterDecoder {
                     originBytes.add(1)
             }
 
-            val preambleEnd = findPreamble(originBytes)
-            if (preambleEnd == -1 || preambleEnd + messageLen > originBytes.size) return Pair(false, -1)
-
-            val messageBytes = arrayListOf<Int>()
-            for (i in preambleEnd until preambleEnd + messageLen) {
-                messageBytes.add(originBytes[i])
-            }
-
-            return HammingDecoder.decode(messageBytes)
+            return Pair(true, originBytes)
         }
 
-        private fun check21(bytes: List<Int>, start: Int): Pair<Boolean, Int> {
+        private fun check21(bytes: List<Int>, start: Int): Pair<Boolean, List<Int>> {
             val originBytes = arrayListOf<Int>()
 
             for (i in start until bytes.size - 2 step 3) {
                 if (bytes[i] != bytes[i + 1] || bytes[i + 1] == bytes[i + 2])
-                    return Pair(false, -1)
+                    return Pair(false, originBytes)
 
-                if (bytes[i] > bytes[i + 1])
+                if (bytes[i + 1] > bytes[i + 2])
                     originBytes.add(0)
                 else
                     originBytes.add(1)
 
             }
 
-            val preambleEnd = findPreamble(originBytes)
-            if (preambleEnd == -1 || preambleEnd + messageLen - 1 > bytes.size) return Pair(false, -1)
+            return Pair(true, originBytes)
 
-            val messageBytes = arrayListOf<Int>()
-            for (i in preambleEnd until preambleEnd + 8) {
-                messageBytes.add(bytes[i])
-            }
-
-            return HammingDecoder.decode(messageBytes)
         }
 
-        private fun findPreamble(bytes: ArrayList<Int>): Int {
+        fun findPreamble(bytes: ArrayList<Int>): Int {
             val preamble = arrayListOf(1, 0, 1, 0, 1, 0, 1, 0)
             for (i in 0 until bytes.size) {
                 if (i + preamble.size - 1 > bytes.size) return -1

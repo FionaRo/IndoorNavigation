@@ -63,7 +63,7 @@ function addPreambule(binary) {
 }
 
 let currentState = 0
-let tact = 3000
+let tact = 900
 let i = 0
 
 function setInitState() {

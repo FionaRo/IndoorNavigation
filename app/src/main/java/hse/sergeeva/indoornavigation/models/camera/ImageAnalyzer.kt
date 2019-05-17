@@ -5,16 +5,19 @@ import android.graphics.Color
 import android.media.MediaMetadataRetriever
 import android.os.Environment
 import android.util.Log
+import hse.sergeeva.indoornavigation.models.decoders.ManchesterDecoder
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.lang.Exception
+import java.text.SimpleDateFormat
 import java.util.*
 
 
 class ImageAnalyzer {
     val message = mutableListOf<Int>()
+    private val manchesterMessage = mutableListOf<Int>()
     private val queue = mutableListOf<String>()
     private var stopped: Boolean = false
 
@@ -43,14 +46,20 @@ class ImageAnalyzer {
         queue.clear()
     }
 
-    private fun analyze(fileName: String?) : Boolean {
+    fun analyze(fileName: String?) : Boolean {
         val retriever = MediaMetadataRetriever()
         try {
             retriever.setDataSource(fileName)
-            for (time in 0 until 5 * 1000 * 1000 step 300 * 1000) {
-                val image = retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST)
+            val duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+            val milliseconds = duration.toLong()
+            for (time in (300 * 1000).toLong() until milliseconds * 1000 step (300 * 1000).toLong()) {
+                val image = retriever.getFrameAtTime(time, MediaMetadataRetriever.OPTION_CLOSEST)
                 analyzeImage(image)
+                //saveImage(image, "${time/(1000)}-${manchesterMessage.last()}.png")
             }
+
+            message += ManchesterDecoder.decode(manchesterMessage)
+            manchesterMessage.clear()
         } catch (ex: Exception) {
             Log.e("VLCLocationManager", "Error in analyze")
             return false
@@ -60,32 +69,36 @@ class ImageAnalyzer {
 
     private fun analyzeImage(bitmapImage: Bitmap) {
         try {
-            saveImage(bitmapImage, "test.png")
+            //saveImage(bitmapImage, SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date()) + ".png")
 
             var meanRed: Long = 0
             var meanGreen: Long = 0
             var meanBlue: Long = 0
-            for (i in bitmapImage.width / 2 - 50 until bitmapImage.width / 2 + 50) {
-                for (j in bitmapImage.height / 2 - 50 until bitmapImage.height / 2 + 50) {
+            for (i in 0 until bitmapImage.width step 5) {
+                for (j in 0 until bitmapImage.height step 5) {
                     val color = bitmapImage.getPixel(i, j)
                     meanRed += Color.red(color)
                     meanBlue += Color.blue(color)
                     meanGreen += Color.green(color)
                 }
             }
-            val pixCount: Int = 100 * 100//bitmapImage.width / 5 * bitmapImage.height / 5
+            val pixCount: Int = bitmapImage.width / 5 * bitmapImage.height / 5
 
-            if (meanRed / pixCount < 128 && meanGreen / pixCount < 128 && meanBlue / pixCount < 128)
-                message += 0
+            meanRed /= pixCount
+            meanGreen /= pixCount
+            meanBlue /= pixCount
+
+            if (meanRed < 80 && meanGreen < 80 && meanBlue < 80)
+                manchesterMessage += 0
             else
-                message += 1
+                manchesterMessage += 1
 
         } catch (ex: Exception) {
             Log.d("ImageListener", "Error reading image")
         }
     }
 
-    fun saveImage(bitmap: Bitmap, name: String) {
+    private fun saveImage(bitmap: Bitmap, name: String) {
         val file =
             File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path +

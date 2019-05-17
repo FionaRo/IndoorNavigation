@@ -10,7 +10,6 @@ import android.os.Environment
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
-import hse.sergeeva.indoornavigation.models.camera.ImageListener
 import hse.sergeeva.indoornavigation.models.decoders.ManchesterDecoder
 import hse.sergeeva.indoornavigation.presenters.UiRunner
 import kotlinx.coroutines.GlobalScope
@@ -19,6 +18,9 @@ import java.io.File
 import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
+import android.media.MediaMetadataRetriever
+import hse.sergeeva.indoornavigation.models.camera.ImageAnalyzer
+
 
 class VlcLocationManager(private val context: Context) : ILocationManager {
 
@@ -31,6 +33,7 @@ class VlcLocationManager(private val context: Context) : ILocationManager {
     private var previewSession: CameraCaptureSession? = null
     private var lastFile: File? = null
     private var scanStopped: Boolean = false
+    private val imageAnalyzer: ImageAnalyzer = ImageAnalyzer()
 
     private val stateCallback = object : CameraDevice.StateCallback() {
 
@@ -56,13 +59,18 @@ class VlcLocationManager(private val context: Context) : ILocationManager {
         backgroundThread = HandlerThread("CameraBackground")
         backgroundThread?.start()
         backgroundHandler = Handler(backgroundThread!!.looper)
+        imageAnalyzer.start()
 
         GlobalScope.launch {
             try {
                 while (!scanStopped) {
                     if (startRecording()) {
-                        Thread.sleep(30000)
+                        Thread.sleep(19000)
                         stopRecording()
+
+                        GlobalScope.launch {
+                            imageAnalyzer.addFile(lastFile?.absolutePath)
+                        }
                     } else
                         Thread.sleep(500)
                 }
@@ -71,6 +79,7 @@ class VlcLocationManager(private val context: Context) : ILocationManager {
             }
         }
     }
+
 
     @SuppressLint("MissingPermission")
     private fun openCamera() {
@@ -81,7 +90,6 @@ class VlcLocationManager(private val context: Context) : ILocationManager {
 
     private fun startRecording(): Boolean {
         if (cameraDevice == null) return false
-        recording = true
 
         try {
             setUpMediaRecorder()
@@ -117,12 +125,6 @@ class VlcLocationManager(private val context: Context) : ILocationManager {
             previewSession?.abortCaptures()
             mediaRecorder.stop()
             mediaRecorder.reset()
-
-            if (cameraDevice != null) {
-                cameraDevice?.close()
-                cameraDevice = null
-            }
-            mediaRecorder.release()
         } catch (ex: Exception) {
             Log.e("VLCLocationManager", ex.message)
         }
@@ -154,7 +156,7 @@ class VlcLocationManager(private val context: Context) : ILocationManager {
 
         lastFile = getOutputFile()
 
-        mediaRecorder.setOutputFile(lastFile!!.path)
+        mediaRecorder.setOutputFile(lastFile!!.absolutePath)
         val profile = CamcorderProfile.get(CamcorderProfile.QUALITY_480P)
         mediaRecorder.setVideoFrameRate(profile.videoFrameRate)
         mediaRecorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight)
@@ -187,18 +189,19 @@ class VlcLocationManager(private val context: Context) : ILocationManager {
     }
 
     override fun getLocation(): Boolean {
-        if (ImageListener.message.size < 150) return true
-
-        val msg = ImageListener.message.toList()
-        val code = ManchesterDecoder.decode(msg)
-        if (code == -1) return false
-
-        ImageListener.message.clear()
+//        if (imageAnalyzer.message.size < 20) return true
+//
+//        val msg = imageAnalyzer.message.toList()
+//        val code = ManchesterDecoder.decode(msg)
+//        if (code == -1) return false
+//
+//        imageAnalyzer.message.clear()
         return true
     }
 
     override fun stopScan() {
         scanStopped = true
+        imageAnalyzer.stop()
 
         backgroundThread?.quitSafely()
         try {
