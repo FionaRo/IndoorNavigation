@@ -14,7 +14,7 @@ class SensorLocationDataItem : Comparable<SensorLocationDataItem> {
         private set(value) {
             field = value
         }
-    var gpsAlt: Double = 0.0
+    var altitude: Double = 0.0
         private set(value) {
             field = value
         }
@@ -62,7 +62,7 @@ class SensorLocationDataItem : Comparable<SensorLocationDataItem> {
         this.timestamp = timestamp
         this.latitude = latitude
         this.logitude = longitude
-        this.gpsAlt = altitude
+        this.altitude = altitude
         this.absNorthAcc = absNorthAcc
         this.absEastAcc = absEastAcc
         this.absUpAcc = absUpAcc

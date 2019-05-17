@@ -3,7 +3,6 @@ package hse.sergeeva.indoornavigation.algorithms.kalmanFilter
 import android.content.Context
 import android.hardware.*
 import android.location.Location
-import android.util.Log
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -33,42 +32,33 @@ class KalmanLocationService(context: Context, val onKalmanLocation: (Location) -
     private val rotationMatrixInv = FloatArray(16)
     private val absAcceleration = FloatArray(4)
     private val linearAcceleration = FloatArray(4)
-    private var m_magneticDeclination = 0.0
+    private var magneticDeclination = 0.0
     private val tag = "KalmanLocationService"
-    private var m_kalmanFilter: LocationKalmanFilter? = null
-    private val m_sensorDataQueue = PriorityBlockingQueue<SensorLocationDataItem>()
+    private var kalmanFilter: LocationKalmanFilter? = null
+    private val sensorDataQueue = PriorityBlockingQueue<SensorLocationDataItem>()
     private var needTerminate: Boolean = false
     private var deltaTMs: Long = 100
-    private var m_lastLocation: Location? = null
-    private var m_serviceStatus = ServiceStatus.SERVICE_STOPPED
-    private var m_lastLocationAccuracy = 0f
-    private lateinit var m_sensorManager: SensorManager
-    /*accelerometer + rotation vector*/
+    private var lastLocation: Location? = null
+    private var serviceStatus = ServiceStatus.SERVICE_STOPPED
+    private var lastLocationAccuracy = 0f
+    private var sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val sensorTypes = intArrayOf(Sensor.TYPE_LINEAR_ACCELERATION, Sensor.TYPE_ROTATION_VECTOR)
-    private var m_lstSensors: MutableList<Sensor> = mutableListOf()
-    private var m_sensorsEnabled: Boolean = false
+    private var listSensors: MutableList<Sensor> = mutableListOf()
     private var task: Job? = null
 
     init {
-        m_sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         for (st in sensorTypes) {
-            val sensor = m_sensorManager.getDefaultSensor(st)
-            m_lstSensors.add(sensor)
+            val sensor = sensorManager.getDefaultSensor(st)
+            listSensors.add(sensor)
         }
     }
 
-    fun IsRunning(): Boolean {
-        return m_serviceStatus != ServiceStatus.SERVICE_STOPPED && m_serviceStatus != ServiceStatus.SERVICE_PAUSED && m_sensorsEnabled
-    }
-
     fun start() {
-        m_sensorDataQueue.clear()
-        m_serviceStatus = ServiceStatus.SERVICE_STARTED
-        m_sensorsEnabled = true
-
-        for (sensor in m_lstSensors) {
-            m_sensorManager.unregisterListener(this, sensor)
-            m_sensorsEnabled = m_sensorsEnabled and !m_sensorManager.registerListener(
+        sensorDataQueue.clear()
+        serviceStatus = ServiceStatus.SERVICE_STARTED
+        for (sensor in listSensors) {
+            sensorManager.unregisterListener(this, sensor)
+            sensorManager.registerListener(
                 this, sensor,
                 Utils.hertz2periodUs(Utils.SENSOR_DEFAULT_FREQ_HZ)
             )
@@ -86,18 +76,13 @@ class KalmanLocationService(context: Context, val onKalmanLocation: (Location) -
     }
 
     fun stop() {
-        m_serviceStatus = ServiceStatus.SERVICE_PAUSED
-        m_sensorsEnabled = false
-        for (sensor in m_lstSensors)
-            m_sensorManager.unregisterListener(this, sensor)
+        serviceStatus = ServiceStatus.SERVICE_PAUSED
+        for (sensor in listSensors)
+            sensorManager.unregisterListener(this, sensor)
 
         needTerminate = true
         task?.cancel()
-        m_sensorDataQueue.clear()
-    }
-
-    fun reset() {
-        m_kalmanFilter = null
+        sensorDataQueue.clear()
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
@@ -119,7 +104,7 @@ class KalmanLocationService(context: Context, val onKalmanLocation: (Location) -
                     0, linearAcceleration, 0
                 )
 
-                if (m_kalmanFilter != null) {
+                if (kalmanFilter != null) {
 
                     val dataItem = SensorLocationDataItem(
                         nowMs.toDouble(),
@@ -133,9 +118,9 @@ class KalmanLocationService(context: Context, val onKalmanLocation: (Location) -
                         SensorLocationDataItem.NOT_INITIALIZED,
                         SensorLocationDataItem.NOT_INITIALIZED,
                         SensorLocationDataItem.NOT_INITIALIZED,
-                        m_magneticDeclination
+                        magneticDeclination
                     )
-                    m_sensorDataQueue.add(dataItem)
+                    sensorDataQueue.add(dataItem)
                 }
             }
             Sensor.TYPE_ROTATION_VECTOR -> {
@@ -148,23 +133,24 @@ class KalmanLocationService(context: Context, val onKalmanLocation: (Location) -
     fun onLocationChanged(loc: hse.sergeeva.indoornavigation.models.Location) {
         val x = loc.longitude
         val y = loc.latitude
-        val posDev = loc.accuracy
+        val posDev = loc.accuracy / 100
+        val velErr = posDev * 0.1
         val timeStamp: Long = Utils.nano2milli(android.os.SystemClock.elapsedRealtimeNanos())
 
         val f = GeomagneticField(
             loc.latitude.toFloat(),
             loc.longitude.toFloat(),
-            0f,
+            109.63f,
             timeStamp
         )
-        m_magneticDeclination = f.declination.toDouble()
+        magneticDeclination = f.declination.toDouble()
 
-        if (m_kalmanFilter == null) {
-            m_kalmanFilter = LocationKalmanFilter(
+        if (kalmanFilter == null) {
+            kalmanFilter = LocationKalmanFilter(
                 Coordinates.longitudeToMeters(x),
                 Coordinates.latitudeToMeters(y),
-                SensorLocationDataItem.NOT_INITIALIZED,
-                SensorLocationDataItem.NOT_INITIALIZED,
+                0.0,
+                0.0,
                 Utils.ACCELEROMETER_DEFAULT_DEVIATION,
                 posDev.toDouble(),
                 timeStamp.toDouble(),
@@ -179,20 +165,20 @@ class KalmanLocationService(context: Context, val onKalmanLocation: (Location) -
             SensorLocationDataItem.NOT_INITIALIZED,
             SensorLocationDataItem.NOT_INITIALIZED,
             SensorLocationDataItem.NOT_INITIALIZED,
-            SensorLocationDataItem.NOT_INITIALIZED,
-            SensorLocationDataItem.NOT_INITIALIZED,
+            0.0,
+            0.0,
             posDev.toDouble(),
-            SensorLocationDataItem.NOT_INITIALIZED,
-            m_magneticDeclination
+            velErr,
+            magneticDeclination
         )
-        m_sensorDataQueue.add(dataItem)
+        sensorDataQueue.add(dataItem)
     }
 
     private fun worker() {
         while (!needTerminate) {
             Thread.sleep(deltaTMs)
 
-            var dataItem: SensorLocationDataItem? = m_sensorDataQueue.poll()
+            var dataItem: SensorLocationDataItem? = sensorDataQueue.poll()
             var lastTimeStamp = 0.0
             while (dataItem != null) {
                 if (dataItem.timestamp < lastTimeStamp) {
@@ -209,7 +195,7 @@ class KalmanLocationService(context: Context, val onKalmanLocation: (Location) -
                     val loc = locationAfterUpdateStep(dataItem)
                     onLocationChanged(loc)
                 }
-                dataItem = m_sensorDataQueue.poll()
+                dataItem = sensorDataQueue.poll()
             }
         }
     }
@@ -217,22 +203,22 @@ class KalmanLocationService(context: Context, val onKalmanLocation: (Location) -
     private fun onLocationChanged(location: Location) {
         if (location.latitude == 0.0 || location.longitude == 0.0 || location.provider != tag) return
 
-        m_serviceStatus = ServiceStatus.HAS_LOCATION
-        m_lastLocation = location
-        m_lastLocationAccuracy = location.accuracy
+        serviceStatus = ServiceStatus.HAS_LOCATION
+        lastLocation = location
+        lastLocationAccuracy = location.accuracy
 
         onKalmanLocation(location)
     }
 
     private fun handlePredict(locationItem: SensorLocationDataItem) {
-        m_kalmanFilter?.predict(locationItem.timestamp, locationItem.absEastAcc, locationItem.absNorthAcc)
+        kalmanFilter?.predict(locationItem.timestamp, locationItem.absEastAcc, locationItem.absNorthAcc)
     }
 
     private fun handleUpdate(locationItem: SensorLocationDataItem) {
         val xVel = locationItem.speed * Math.cos(locationItem.course)
         val yVel = locationItem.speed * Math.sin(locationItem.course)
 
-        m_kalmanFilter?.update(
+        kalmanFilter?.update(
             locationItem.timestamp,
             Coordinates.longitudeToMeters(locationItem.logitude),
             Coordinates.latitudeToMeters(locationItem.latitude),
@@ -247,14 +233,14 @@ class KalmanLocationService(context: Context, val onKalmanLocation: (Location) -
         val loc = Location(tag)
 
         val point = Coordinates.metersToLatLng(
-            m_kalmanFilter!!.getCurrentX(),
-            m_kalmanFilter!!.getCurrentY()
+            kalmanFilter!!.getCurrentX(),
+            kalmanFilter!!.getCurrentY()
         )
-        val xVel: Double = m_kalmanFilter!!.getCurrentXVel()
-        val yVel: Double = m_kalmanFilter!!.getCurrentYVel()
+        val xVel: Double = kalmanFilter!!.getCurrentXVel()
+        val yVel: Double = kalmanFilter!!.getCurrentYVel()
         loc.latitude = point.latitude
         loc.longitude = point.longitude
-        loc.altitude = locationItem.gpsAlt
+        loc.altitude = locationItem.altitude
         val speed = Math.sqrt(xVel * xVel + yVel * yVel) //scalar speed without bearing
         loc.bearing = locationItem.course.toFloat()
         loc.speed = speed.toFloat()

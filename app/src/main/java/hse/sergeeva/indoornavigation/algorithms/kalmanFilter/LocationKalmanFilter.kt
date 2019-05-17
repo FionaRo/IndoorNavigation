@@ -21,7 +21,7 @@ class LocationKalmanFilter {
 
         kalmanFilter = KalmanFilter(4, mesDim, 1)
         stampMsUpdate = timeStampMs
-        stampMsPredict = stampMsUpdate
+        stampMsPredict = timeStampMs
         accSigma = accDev
         predictCount = 0
         kalmanFilter.Xk_k.setData(doubleArrayOf(x, y, xVel, yVel))

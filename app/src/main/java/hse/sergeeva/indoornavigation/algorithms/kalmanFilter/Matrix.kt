@@ -16,7 +16,7 @@ class Matrix(private var rows: Int, private var cols: Int) {
 
     fun setData(args: FloatArray) {
         if (args.size != rows * cols) {
-            throw AssertionError("Assertion failed")
+            //throw AssertionError("Assertion failed")
         }
         for (r in 0 until rows) {
             for (c in 0 until cols) {
