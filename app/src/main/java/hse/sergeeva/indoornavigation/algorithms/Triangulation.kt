@@ -11,7 +11,7 @@ class Triangulation {
         fun rssiToDistance(rssi: Int): Double {
             if (rssi == 0) return -1.0
 
-            return Math.pow(10.0, 1.0 * (measuredPower - rssi) / 2 * N)
+            return Math.pow(10.0, 1.0 * (measuredPower - rssi) / (10 * N))
         }
 
         fun triangulateLocation(
